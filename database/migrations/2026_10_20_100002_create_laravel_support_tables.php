@@ -6,12 +6,25 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('jobs', function (Blueprint $table) {
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
+            $table->string('token');
+            $table->timestamp('created_at')->nullable();
+        });
+
+        Schema::create('sessions', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->unsignedBigInteger('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
+
+        // NOTE: named queue_jobs (not "jobs") because "jobs" is the job-postings table.
+        Schema::create('queue_jobs', function (Blueprint $table) {
             $table->id();
             $table->string('queue')->index();
             $table->longText('payload');
@@ -45,13 +58,12 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('jobs');
-        Schema::dropIfExists('job_batches');
         Schema::dropIfExists('failed_jobs');
+        Schema::dropIfExists('job_batches');
+        Schema::dropIfExists('queue_jobs');
+        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
     }
 };
