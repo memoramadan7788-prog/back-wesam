@@ -214,3 +214,4 @@ php artisan migrate:fresh
 # Verify all migrations ran successfully:
 php artisan migrate:status
 ```
+
