@@ -32,6 +32,10 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->timestamp('closed_at')->nullable();
             $table->fullText(['title', 'description']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

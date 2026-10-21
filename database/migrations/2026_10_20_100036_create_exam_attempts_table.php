@@ -18,6 +18,10 @@ return new class extends Migration
             $table->timestamp('started_at')->nullable();
             $table->timestamp('submitted_at')->nullable();
             $table->unique(['exam_id', 'application_id', 'attempt_no']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

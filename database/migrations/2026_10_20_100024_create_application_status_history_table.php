@@ -16,6 +16,10 @@ return new class extends Migration
             $table->foreignId('changed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('reason')->nullable();
             $table->timestamp('changed_at')->useCurrent()->useCurrentOnUpdate();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

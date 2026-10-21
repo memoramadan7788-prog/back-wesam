@@ -20,6 +20,10 @@ return new class extends Migration
             $table->timestamp('applied_at')->useCurrent();
             $table->timestamp('withdrawn_at')->nullable();
             $table->unique(['job_id', 'candidate_id', 'attempt_no']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

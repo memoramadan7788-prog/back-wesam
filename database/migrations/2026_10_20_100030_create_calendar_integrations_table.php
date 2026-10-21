@@ -14,6 +14,10 @@ return new class extends Migration
             $table->enum('provider', ['google', 'outlook'])->default('google');
             $table->string('token_ref');
             $table->string('sync_status')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

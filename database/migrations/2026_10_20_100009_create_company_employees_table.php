@@ -22,6 +22,10 @@ return new class extends Migration
             $table->timestamp('requested_at')->useCurrent();
             $table->timestamp('joined_at')->nullable();
             $table->timestamp('left_at')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

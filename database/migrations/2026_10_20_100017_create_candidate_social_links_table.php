@@ -13,6 +13,10 @@ return new class extends Migration
             $table->foreignId('candidate_id')->constrained('candidate_profiles')->cascadeOnDelete();
             $table->string('platform');
             $table->string('url', 2048);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

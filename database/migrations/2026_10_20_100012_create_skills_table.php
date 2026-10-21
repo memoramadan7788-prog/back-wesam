@@ -13,6 +13,10 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->enum('type', ['soft', 'tech'])->default('soft');
             $table->boolean('accepted')->default(false);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

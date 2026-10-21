@@ -16,6 +16,10 @@ return new class extends Migration
             $table->text('internal_notes');
             $table->text('candidate_feedback')->nullable();
             $table->timestamp('feedback_shared_at')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

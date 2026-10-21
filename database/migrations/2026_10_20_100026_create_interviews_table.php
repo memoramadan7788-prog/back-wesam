@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('meeting_link', 2048)->nullable();
             $table->string('location')->nullable();
             $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

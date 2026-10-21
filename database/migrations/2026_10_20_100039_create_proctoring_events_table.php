@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('model_version');
             $table->timestamp('occurred_at')->useCurrent()->useCurrentOnUpdate();
             $table->string('evidence_key', 500)->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

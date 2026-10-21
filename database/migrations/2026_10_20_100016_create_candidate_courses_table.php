@@ -14,6 +14,10 @@ return new class extends Migration
             $table->string('name');
             $table->string('link', 2048)->nullable();
             $table->string('image_path', 500)->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

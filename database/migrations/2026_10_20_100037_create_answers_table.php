@@ -19,6 +19,10 @@ return new class extends Migration
             $table->text('transcript')->nullable();
             $table->decimal('score', 6, 2)->nullable();
             $table->unique(['attempt_id', 'question_id']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

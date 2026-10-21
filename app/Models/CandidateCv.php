@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CandidateCv extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'candidate_cvs';
-
-    public $timestamps = false;
-
     protected $guarded = [];
 
     protected $casts = [

@@ -15,6 +15,10 @@ return new class extends Migration
             $table->foreignId('nominated_by')->constrained('users')->cascadeOnDelete();
             $table->timestamp('nominated_at')->useCurrent()->useCurrentOnUpdate();
             $table->unique(['job_id', 'employee_id']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

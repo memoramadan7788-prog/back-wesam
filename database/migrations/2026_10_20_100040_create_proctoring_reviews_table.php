@@ -14,6 +14,10 @@ return new class extends Migration
             $table->foreignId('reviewer_id')->constrained('users');
             $table->string('decision');
             $table->timestamp('reviewed_at')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

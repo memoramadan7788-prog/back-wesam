@@ -15,6 +15,10 @@ return new class extends Migration
             $table->enum('decision', ['accept', 'override'])->default('accept');
             $table->text('reason')->nullable();
             $table->timestamp('decided_at')->useCurrent()->useCurrentOnUpdate();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

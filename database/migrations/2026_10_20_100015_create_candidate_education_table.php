@@ -16,6 +16,10 @@ return new class extends Migration
             $table->string('field_of_study')->nullable();
             $table->unsignedSmallInteger('graduation_year');
             $table->string('place')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -20,6 +20,10 @@ return new class extends Migration
             $table->timestamp('sent_at')->useCurrent()->useCurrentOnUpdate();
             $table->timestamp('responded_at')->nullable();
             $table->timestamp('expires_at')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

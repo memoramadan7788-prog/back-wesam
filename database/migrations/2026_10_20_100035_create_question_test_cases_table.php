@@ -14,6 +14,10 @@ return new class extends Migration
             $table->text('input');
             $table->text('expected_output');
             $table->boolean('is_hidden')->default(false);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

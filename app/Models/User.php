@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,11 +13,15 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
+    use HasApiTokens, SoftDeletes, Auditable;
+
+
     protected $table = 'users';
-
-    public $timestamps = false;
-
     protected $guarded = [];
+
+    protected $attributes = [
+        'account_status_id' => AccountStatus::ACTIVE,
+    ];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -23,7 +30,32 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function country(): BelongsTo
+        public function accountStatus(): BelongsTo
+    {
+        return $this->belongsTo(AccountStatus::class, 'account_status_id');
+    }
+
+    public function isActive(): bool
+    {
+        return $this->account_status_id === AccountStatus::ACTIVE;
+    }
+
+    public function isDeactivated(): bool
+    {
+        return $this->account_status_id === AccountStatus::DEACTIVATED;
+    }
+
+    public function isBlocked(): bool
+    {
+        return $this->account_status_id === AccountStatus::BLOCKED;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->account_status_id === AccountStatus::DELETED;
+    }
+
+public function country(): BelongsTo
     {
         return $this->belongsTo(Country::class, 'country_id');
     }

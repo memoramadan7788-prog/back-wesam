@@ -19,6 +19,10 @@ return new class extends Migration
             $table->unsignedBigInteger('related_id')->nullable();
             $table->string('delivery_status')->default('pending')->index();
             $table->timestamp('read_at')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

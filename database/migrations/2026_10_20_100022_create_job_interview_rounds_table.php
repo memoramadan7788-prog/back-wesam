@@ -14,6 +14,10 @@ return new class extends Migration
             $table->unsignedTinyInteger('round_no');
             $table->enum('interview_type', ['onsite', 'online', 'custom'])->default('onsite');
             $table->unsignedSmallInteger('duration_min');
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

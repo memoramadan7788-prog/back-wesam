@@ -19,6 +19,10 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamp('uploaded_at')->useCurrent()->useCurrentOnUpdate();
             $table->unique(['candidate_id', 'version']);
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

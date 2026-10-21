@@ -17,6 +17,10 @@ return new class extends Migration
             $table->unsignedTinyInteger('attempt_limit')->default(3);
             $table->decimal('passing_score', 6, 2);
             $table->string('status')->default('draft')->index();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

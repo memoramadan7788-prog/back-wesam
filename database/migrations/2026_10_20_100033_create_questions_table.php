@@ -18,6 +18,10 @@ return new class extends Migration
             $table->enum('source', ['manual', 'ai'])->default('manual');
             $table->string('status')->default('draft')->index();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

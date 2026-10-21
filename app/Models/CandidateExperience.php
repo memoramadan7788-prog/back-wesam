@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CandidateExperience extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'candidate_experience';
-
-    public $timestamps = false;
-
     protected $guarded = [];
 
     protected $casts = [

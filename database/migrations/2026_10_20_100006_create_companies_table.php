@@ -19,10 +19,15 @@ return new class extends Migration
             $table->string('contact_phone')->nullable();
             $table->text('address')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected', 'suspended'])->default('pending')->index();
+            $table->foreignId('account_status_id')->nullable()->default(1)->constrained('account_statuses');
             $table->foreignId('owner_user_id')->constrained('users');
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->text('rejection_reason')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

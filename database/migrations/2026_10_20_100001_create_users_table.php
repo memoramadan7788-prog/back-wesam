@@ -14,11 +14,15 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
             $table->enum('account_type', ['candidate', 'company', 'admin'])->default('candidate');
-            $table->string('account_status')->default('active')->index();
+            $table->foreignId('account_status_id')->default(1)->constrained('account_statuses');
             $table->string('locale')->default('ar');
             $table->string('theme')->default('system');
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
+            $table->unsignedBigInteger('UID')->nullable();
+            $table->unsignedBigInteger('LUID')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

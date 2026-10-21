@@ -13,6 +13,10 @@ return new class extends Migration
             $table->foreignId('session_id')->constrained('chatbot_sessions')->cascadeOnDelete();
             $table->string('sender_type');
             $table->text('content');
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

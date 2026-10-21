@@ -12,6 +12,9 @@ return new class extends Migration
             $table->foreignId('candidate_id')->constrained('candidate_profiles')->cascadeOnDelete();
             $table->foreignId('skill_id')->constrained('skills')->cascadeOnDelete();
             $table->string('level')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
             $table->primary(['candidate_id', 'skill_id']);
         });
     }

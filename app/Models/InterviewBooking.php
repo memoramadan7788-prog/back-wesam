@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InterviewBooking extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'interview_bookings';
-
-    public $timestamps = false;
-
     protected $guarded = [];
 
     protected $casts = [

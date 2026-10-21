@@ -15,6 +15,10 @@ return new class extends Migration
             $table->decimal('range_min', 12, 2);
             $table->decimal('range_max', 12, 2);
             $table->string('currency', 3)->default('EGP');
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

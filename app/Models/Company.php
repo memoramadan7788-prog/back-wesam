@@ -2,23 +2,34 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'companies';
-
-    public $timestamps = false;
-
     protected $guarded = [];
+
+    protected $attributes = [
+        'account_status_id' => AccountStatus::ACTIVE,
+    ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
     ];
 
-    public function owner(): BelongsTo
+        public function accountStatus(): BelongsTo
+    {
+        return $this->belongsTo(AccountStatus::class, 'account_status_id');
+    }
+
+public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
     }

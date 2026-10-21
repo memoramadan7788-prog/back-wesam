@@ -18,6 +18,10 @@ return new class extends Migration
             $table->string('photo_path', 500)->nullable();
             $table->boolean('has_no_experience')->default(false);
             $table->unsignedTinyInteger('years_experience')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

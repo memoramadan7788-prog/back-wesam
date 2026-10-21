@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ApplicationStatusHistory extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'application_status_history';
-
-    public $timestamps = false;
-
     protected $guarded = [];
 
     protected $casts = [

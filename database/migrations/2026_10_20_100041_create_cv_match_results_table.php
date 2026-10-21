@@ -19,6 +19,10 @@ return new class extends Migration
             $table->string('model_version')->nullable();
             $table->string('request_id')->nullable();
             $table->enum('run_status', ['pending', 'ok', 'failed', 'timeout'])->default('pending')->index();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

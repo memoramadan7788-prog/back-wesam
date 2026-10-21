@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\Auditable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JobExam extends Model
 {
+    use SoftDeletes, Auditable;
+
+
     protected $table = 'job_exams';
-
-    public $timestamps = false;
-
     protected $guarded = [];
 
     public function job(): BelongsTo

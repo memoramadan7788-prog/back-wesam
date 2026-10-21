@@ -13,6 +13,10 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->enum('scope', ['platform', 'company'])->default('platform');
             $table->text('description')->nullable();
+            $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->softDeletes();
         });
     }
 
