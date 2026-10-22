@@ -133,7 +133,7 @@ class UserAuthController extends Controller
 
         return response()->json([
             'message' => 'Login successful.',
-            'user'    => new UserResource($user->load(['roles', 'candidateProfile', 'accountStatus'])),
+            'user'    => new UserResource($user->load(['roles', 'candidateProfile', 'accountStatus', 'ownedCompanies', 'companyEmployee.company'])),
             'token'   => $token,
         ], 200);
     }

@@ -16,6 +16,7 @@ class SubmitApplicationRequest extends FormRequest
         return [
             'cv_id'      => ['nullable', 'integer', 'exists:candidate_cvs,id'],
             'cover_note' => ['nullable', 'string', 'max:3000'],
+            'consent'    => ['nullable', 'boolean'],
         ];
     }
 }

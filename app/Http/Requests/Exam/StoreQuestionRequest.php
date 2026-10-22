@@ -20,8 +20,9 @@ class StoreQuestionRequest extends FormRequest
             'points'               => ['required', 'integer', 'min:1'],
             'order_no'             => ['nullable', 'integer', 'min:1'],
             'options'              => ['nullable', 'array', 'min:2'],
-            'options.*.text'       => ['required_with:options', 'string'],
-            'options.*.is_correct' => ['required_with:options', 'boolean'],
+            'options.*.text'        => ['nullable', 'string'],
+            'options.*.option_text' => ['nullable', 'string'],
+            'options.*.is_correct'  => ['required_with:options', 'boolean'],
         ];
     }
 }

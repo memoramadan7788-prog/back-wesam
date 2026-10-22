@@ -1418,11 +1418,17 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "const": "Exam attempt submitted and graded successfully."
+                                            "enum": [
+                                                "Exam attempt submitted. Non-MCQ questions are pending reviewer evaluation.",
+                                                "Exam attempt submitted and graded successfully."
+                                            ]
                                         },
                                         "attempt_status": {
                                             "type": "string",
                                             "const": "submitted"
+                                        },
+                                        "grading_status": {
+                                            "type": "string"
                                         },
                                         "total_score": {
                                             "type": "number"
@@ -1431,12 +1437,16 @@
                                             "type": "number"
                                         },
                                         "is_passed": {
-                                            "type": "boolean"
+                                            "type": [
+                                                "boolean",
+                                                "null"
+                                            ]
                                         }
                                     },
                                     "required": [
                                         "message",
                                         "attempt_status",
+                                        "grading_status",
                                         "total_score",
                                         "passing_score",
                                         "is_passed"
@@ -2942,6 +2952,25 @@
                                     "required": [
                                         "message",
                                         "job"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Your company account is pending administrative approval. You cannot publish jobs until your account is approved."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
                                     ]
                                 }
                             }
@@ -4673,6 +4702,102 @@
                 }
             }
         },
+        "/job-categories": {
+            "get": {
+                "operationId": "lookups.categories",
+                "summary": "GET /api/job-categories\nList all active job categories for dropdowns",
+                "tags": [
+                    "Lookup"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/JobCategory"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/skills": {
+            "get": {
+                "operationId": "lookups.skills",
+                "summary": "GET /api/skills\nList all skills with optional search",
+                "tags": [
+                    "Lookup"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Skill"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/countries": {
+            "get": {
+                "operationId": "lookups.countries",
+                "summary": "GET /api/countries\nList all countries for location dropdowns",
+                "tags": [
+                    "Lookup"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Country"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/candidate/offers": {
             "get": {
                 "operationId": "candidate.offers.index",
@@ -6400,6 +6525,64 @@
                 ],
                 "title": "CompanyJobResource"
             },
+            "Country": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "UID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "LUID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "code",
+                    "UID",
+                    "LUID",
+                    "created_at",
+                    "updated_at",
+                    "deleted_at"
+                ],
+                "title": "Country"
+            },
             "CreateOfferRequest": {
                 "type": "object",
                 "properties": {
@@ -6868,6 +7051,67 @@
                     "created_at"
                 ],
                 "title": "InterviewerInterviewResource"
+            },
+            "JobCategory": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "parent_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "UID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "LUID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "parent_id",
+                    "UID",
+                    "LUID",
+                    "created_at",
+                    "updated_at",
+                    "deleted_at"
+                ],
+                "title": "JobCategory"
             },
             "JobDetailResource": {
                 "type": "object",
@@ -7640,6 +7884,68 @@
                 ],
                 "title": "ScheduleInterviewRequest"
             },
+            "Skill": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "accepted": {
+                        "type": "boolean"
+                    },
+                    "UID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "LUID": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "deleted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "type",
+                    "accepted",
+                    "UID",
+                    "LUID",
+                    "created_at",
+                    "updated_at",
+                    "deleted_at"
+                ],
+                "title": "Skill"
+            },
             "StoreAvailabilityRequest": {
                 "type": "object",
                 "properties": {
@@ -7904,7 +8210,7 @@
                             "null"
                         ],
                         "items": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     }
                 },
@@ -7951,7 +8257,16 @@
                             "type": "object",
                             "properties": {
                                 "text": {
-                                    "type": "string"
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "option_text": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
                                 },
                                 "is_correct": {
                                     "type": "boolean"
@@ -7983,6 +8298,12 @@
                             "null"
                         ],
                         "maxLength": 3000
+                    },
+                    "consent": {
+                        "type": [
+                            "boolean",
+                            "null"
+                        ]
                     }
                 },
                 "title": "SubmitApplicationRequest"
@@ -8411,6 +8732,28 @@
                         "type": "array",
                         "items": {}
                     },
+                    "company": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "status"
+                        ]
+                    },
                     "candidate_profile": {
                         "type": "object",
                         "properties": {
@@ -8457,6 +8800,7 @@
                     "account_type",
                     "account_status_id",
                     "account_status",
+                    "company",
                     "created_at"
                 ],
                 "title": "UserResource"

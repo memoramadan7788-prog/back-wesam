@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             JobCategorySeeder::class,
             SkillSeeder::class,
+            CountrySeeder::class,
+            SalaryRecordSeeder::class,
         ]);
     }
 }

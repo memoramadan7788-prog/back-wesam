@@ -50,6 +50,15 @@ Route::middleware('throttle:60,1')->prefix('jobs')->name('jobs.')->group(functio
 
 /*
 |--------------------------------------------------------------------------
+| System Lookups & Taxonomy (Public)
+|--------------------------------------------------------------------------
+*/
+Route::get('/job-categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('lookups.categories');
+Route::get('/skills', [\App\Http\Controllers\Api\LookupController::class, 'skills'])->name('lookups.skills');
+Route::get('/countries', [\App\Http\Controllers\Api\LookupController::class, 'countries'])->name('lookups.countries');
+
+/*
+|--------------------------------------------------------------------------
 | Salary Benchmark Route (Public)
 |--------------------------------------------------------------------------
 */

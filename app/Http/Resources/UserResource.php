@@ -12,6 +12,8 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $company = $this->ownedCompanies?->first() ?? $this->companyEmployee?->company;
+
         return [
             'id'                 => $this->id,
             'name'               => $this->name,
@@ -20,6 +22,11 @@ class UserResource extends JsonResource
             'account_status_id'  => $this->account_status_id,
             'account_status'     => $this->accountStatus?->name,
             'roles'              => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
+            'company'            => $company ? [
+                'id'     => $company->id,
+                'name'   => $company->name,
+                'status' => $company->status,
+            ] : null,
             'candidate_profile'  => $this->whenLoaded('candidateProfile', fn () => [
                 'id'               => $this->candidateProfile->id,
                 'headline'         => $this->candidateProfile->headline,
@@ -30,4 +37,3 @@ class UserResource extends JsonResource
         ];
     }
 }
-

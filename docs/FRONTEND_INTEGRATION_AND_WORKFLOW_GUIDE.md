@@ -23,7 +23,7 @@ This document serves as the **official contract and blueprint for Frontend Engin
 5. **Standard Error Handling:**
    - `401 Unauthorized`: Token expired or invalid -> Clear local state and redirect to `/login`.
    - `422 Unprocessable Content`: Validation errors -> Render errors under respective form input fields (`error.response.data.errors`).
-   - `403 Forbidden`: Permission denied or limit reached (e.g. maximum exam attempts) -> Show alert toast.
+   - `403 Forbidden`: Permission denied or limit reached (e.g. maximum exam attempts, or company is pending approval) -> Show alert toast.
    - `409 Conflict`: Duplicate action (e.g. applying twice to the same job, or submitting an already submitted exam) -> Show warning dialog.
 
 ---
@@ -35,31 +35,32 @@ flowchart TD
     subgraph Candidate_Journey [Candidate Journey]
         C1[1. Register / Login] --> C2[2. Complete Profile & Upload CV]
         C2 --> C3[3. Search Public Jobs & Salary Benchmark]
-        C3 --> C4[4. Click 'Apply Now' Button]
+        C3 --> C4[4. Click 'Apply Now' Button with Consent]
         C4 --> C5[5. Take Technical Exam - 3 Attempts Max]
         C5 --> C6[6. Book & Attend Interview Slot]
         C6 --> C7[7. Review & Accept Job Offer]
     end
 
     subgraph Company_Journey [Company / Employer Journey]
-        E1[1. Register Company & Verify] --> E2[2. Post Job with Required Skills]
-        E2 --> E3[3. Create & Attach Online Exam]
-        E3 --> E4[4. Review ATS Pipeline & Move Stages]
-        E4 --> E5[5. Schedule Interview Rounds]
-        E5 --> E6[6. Extend Formal Job Offer]
+        E1[1. Register Company - Status Pending] --> E2[2. Admin Approves Company]
+        E2 --> E3[3. Post Job with Required Skills]
+        E3 --> E4[4. Create & Attach Online Exam]
+        E4 --> E5[5. Review ATS Kanban & Move Stages]
+        E5 --> E6[6. Schedule Interview Rounds]
+        E6 --> E7[7. Extend Formal Job Offer]
     end
 
     subgraph Interviewer_Journey [Interviewer Journey]
-        I1[1. Define Availability Slots] --> I2[2. View Scheduled Interviews]
+        I1[1. Define Availability Slots start_at/end_at] --> I2[2. View Scheduled Interviews]
         I2 --> I3[3. Fill Evaluation Scorecard]
         I3 --> I4[4. Publish Feedback to Candidate]
     end
 
-    C4 -.-> E4
-    E3 -.-> C5
+    C4 -.-> E5
+    E4 -.-> C5
     I1 -.-> C6
-    E5 -.-> I2
-    E6 -.-> C7
+    E6 -.-> I2
+    E7 -.-> C7
 ```
 
 ---
@@ -108,21 +109,29 @@ flowchart TD
     "password": "Password123!"
   }
   ```
-- **Success Action (200):** 
+- **Success Action (200):**
   ```json
   {
     "message": "Login successful.",
     "user": {
       "id": 12,
-      "name": "Ahmed Mostafa",
-      "email": "ahmed@example.com",
-      "account_type": "candidate"
+      "name": "Tarek Ali",
+      "email": "tarek@acme.com",
+      "account_type": "company",
+      "account_status": "Active",
+      "roles": ["company_admin"],
+      "company": {
+        "id": 1,
+        "name": "Acme Inc.",
+        "status": "approved"
+      }
     },
-    "access_token": "1|abc123token..."
+    "token": "1|abc123token..."
   }
   ```
   - If `account_type === 'candidate'` -> Redirect to `/jobs` or `/candidate/dashboard`.
   - If `account_type === 'company'` -> Redirect to `/company/jobs`.
+  - Note: If `company.status === 'pending'`, show a banner: *"Your company account is currently under admin review."*
 
 #### Screen 4: Logout Button (In Navbar / Header)
 - **Trigger / Button:** Click **"Logout"**
@@ -131,7 +140,16 @@ flowchart TD
 
 ---
 
-### 3.2. Candidate Portal Screens
+### 3.2. Public Lookups & Taxonomy (For Dropdowns)
+
+#### Screen 4b: Categories, Skills & Countries Lookups
+- **Categories:** `GET /api/job-categories` -> Returns `[{ id: 1, name: "IT & Software" }, ...]`
+- **Skills:** `GET /api/skills?q=lar` -> Returns `[{ id: 2, name: "Laravel", type: "tech" }, ...]`
+- **Countries:** `GET /api/countries` -> Returns `[{ id: 1, name: "Egypt", code: "EG" }, ...]`
+
+---
+
+### 3.3. Candidate Portal Screens
 
 #### Screen 5: Candidate Profile Page (`/candidate/profile`)
 - **Event: Page Load**
@@ -194,14 +212,14 @@ flowchart TD
 
 ---
 
-### 3.3. Job Discovery & Application Flow
+### 3.4. Job Discovery & Application Flow
 
 #### Screen 8: Public Job Search & Filter Page (`/jobs`)
 - **Event: Page Load / Filter Change**
   - **Method & Route:** `GET /api/jobs?q={search}&category_id={cat}&work_mode={mode}&salary_min={min}&page={page}`
   - **Action:** Render job cards with Company Name, Location, Salary Range, Work Mode badge.
 - **Optional Helper:** Click **"View Salary Benchmark"**
-  - **Method & Route:** `GET /api/salary-benchmark?job_title=Software`
+  - **Method & Route:** `GET /api/salary-benchmark?job_title=Backend`
   - **Action:** Render market average min/max salary chart for that job role.
 
 #### Screen 9: Job Details Page (`/jobs/:id`)
@@ -214,7 +232,8 @@ flowchart TD
     ```json
     {
       "cover_note": "I have 5 years experience matching all required qualifications.",
-      "cv_id": 4
+      "cv_id": 4,
+      "consent": true
     }
     ```
   - **Success Action (201):** Show modal: *"Application submitted successfully!"*, disable button, display status badge: `"Submitted"`.
@@ -233,11 +252,17 @@ flowchart TD
 
 ---
 
-### 3.4. Online Assessment & Exam Flow
+### 3.5. Online Assessment & Exam Flow
 
 #### Screen 11: Candidate Exam Room (`/candidate/exams/:examId/application/:applicationId`)
 - **Trigger / Button:** Click **"Start Exam"**
   - **Method & Route:** `POST /api/candidate/exams/{examId}/applications/{applicationId}/start`
+  - **Payload:**
+    ```json
+    {
+      "camera_consent": true
+    }
+    ```
   - **Success Action (200):**
     - Returns attempt details (`attempt_no`, `time_limit_min`) and questions array.
     - **Security Feature:** Question options do **not** reveal the correct answer (`is_correct` is concealed).
@@ -261,17 +286,18 @@ flowchart TD
     }
     ```
   - **Success Action (200):**
-    - Returns auto-graded MCQ score:
+    - Returns grading status:
       ```json
       {
         "message": "Exam attempt submitted and graded successfully.",
         "attempt_status": "submitted",
+        "grading_status": "graded",
         "total_score": 85.0,
         "passing_score": 70.0,
         "is_passed": true
       }
       ```
-    - Redirect to Screen 12 (Exam Result).
+    - Note: If exam contains written/coding questions, `grading_status` is `"pending_review"` and `is_passed` is `null`.
 
 #### Screen 12: Exam Result Page (`/candidate/exam-attempts/:attemptId/result`)
 - **Event: Page Load**
@@ -280,23 +306,23 @@ flowchart TD
 
 ---
 
-### 3.5. Interview Booking & Management
+### 3.6. Interview Booking & Management
 
 #### Screen 13: Candidate Interview Booking (`/candidate/interviews/booking`)
 - **Event: Page Load**
-  - **Method & Route:** `GET /api/candidate/available-slots?date_from=2026-11-01&date_to=2026-11-07`
-  - **Action:** Render calendar / time slots picker of available interviewer slots.
+  - **Method & Route:** `GET /api/candidate/available-slots?from=2026-11-01&to=2026-11-07`
+  - **Action:** Render calendar / time slots picker of available interviewer slots. Returns array of slots with `id` (`availability_id`), `start_at`, `end_at`, `interviewer`.
 - **Trigger / Button:** Select slot & Click **"Confirm Interview Booking"**
   - **Method & Route:** `POST /api/candidate/interviews/book`
   - **Payload:**
     ```json
     {
-      "interview_id": 5,
-      "slot_start": "2026-11-03 10:00:00",
-      "slot_end": "2026-11-03 10:45:00"
+      "application_id": 1,
+      "availability_id": 5,
+      "interview_type": "online"
     }
     ```
-  - **Success Action (200):** Show confirmed booking card with Google Meet / Zoom link.
+  - **Success Action (201):** Show confirmed booking card with meeting details.
 
 #### Screen 14: Candidate Interviews List (`/candidate/interviews`)
 - **Event: Page Load**
@@ -304,13 +330,14 @@ flowchart TD
   - **Action:** List upcoming & past interviews with date, round name, and meeting URL.
 - **Trigger / Button:** Click **"Reschedule"**
   - **Method & Route:** `POST /api/candidate/interviews/{id}/reschedule`
-  - **Payload:** `{ "new_slot_start": "...", "reason": "Conflict" }`
+  - **Payload:** `{ "new_availability_id": 8 }`
 - **Trigger / Button:** Click **"Cancel Interview"**
   - **Method & Route:** `POST /api/candidate/interviews/{id}/cancel`
+  - **Payload:** `{ "reason": "Conflict with university exam" }`
 
 ---
 
-### 3.6. Job Offers Flow
+### 3.7. Job Offers Flow
 
 #### Screen 15: Candidate Job Offers Hub (`/candidate/offers`)
 - **Event: Page Load**
@@ -329,7 +356,7 @@ flowchart TD
 
 ---
 
-### 3.7. Company HR & Employer Screens
+### 3.8. Company HR & Employer Screens
 
 #### Screen 16: Company Post / Edit Job (`/company/jobs/create` & `/company/jobs/:id/edit`)
 - **Trigger / Button:** Click **"Publish Job"**
@@ -338,7 +365,7 @@ flowchart TD
     ```json
     {
       "company_id": 1,
-      "category_id": 3,
+      "category_id": 1,
       "title": "Senior Laravel Developer",
       "description": "Detailed description of role responsibilities and qualifications...",
       "work_mode": "hybrid",
@@ -352,9 +379,14 @@ flowchart TD
       "openings_count": 2,
       "deadline": "2026-12-31",
       "visibility": "public",
-      "skills": [1, 4, 7]
+      "skills": [
+        { "id": 1, "is_required": true },
+        { "id": 2, "is_required": true }
+      ]
     }
     ```
+  - **Error Action (403 Forbidden):** If company status is `pending`, returns:
+    `"Your company account is pending administrative approval. You cannot publish jobs until your account is approved."`
 - **Trigger / Button:** Click **"Close Job"**
   - **Method & Route:** `PATCH /api/company/jobs/{id}/status`
   - **Payload:** `{ "status": "closed" }`
@@ -412,9 +444,9 @@ flowchart TD
       "content": "Which HTTP status code signifies resource conflict?",
       "points": 10,
       "options": [
-        { "text": "400 Bad Request", "is_correct": false },
-        { "text": "409 Conflict", "is_correct": true },
-        { "text": "422 Unprocessable", "is_correct": false }
+        { "option_text": "400 Bad Request", "is_correct": false },
+        { "option_text": "409 Conflict", "is_correct": true },
+        { "option_text": "422 Unprocessable", "is_correct": false }
       ]
     }
     ```
@@ -423,18 +455,16 @@ flowchart TD
 
 ---
 
-### 3.8. Interviewer Portal Screens
+### 3.9. Interviewer Portal Screens
 
 #### Screen 20: Interviewer Schedule & Availability (`/interviewer/availability`)
-- **Trigger / Button:** Click **"Add Working Slot"**
+- **Trigger / Button:** Click **"Add Availability Slot"**
   - **Method & Route:** `POST /api/interviewer/availabilities`
   - **Payload:**
     ```json
     {
-      "day_of_week": 1,
-      "start_time": "09:00:00",
-      "end_time": "17:00:00",
-      "is_recurring": true
+      "start_at": "2026-11-03 09:00:00",
+      "end_at": "2026-11-03 17:00:00"
     }
     ```
 
@@ -447,10 +477,9 @@ flowchart TD
   - **Payload:**
     ```json
     {
-      "score": 8.5,
-      "strengths": "Deep knowledge of system design and MySQL indexing.",
-      "weaknesses": "Could improve on automated testing practices.",
-      "recommendation": "hire"
+      "numeric_score": 85,
+      "internal_notes": "Deep knowledge of system design and MySQL indexing.",
+      "candidate_feedback": "Strong communication and problem solving."
     }
     ```
 - **Trigger / Button:** Click **"Publish Evaluation to Candidate"**
@@ -463,11 +492,12 @@ flowchart TD
 
 | User Journey | Key State To Store In Client Store | Primary Route |
 | :--- | :--- | :--- |
-| **Auth** | `token`, `user`, `user.account_type` | `POST /api/auth/login` |
+| **Auth** | `token`, `user`, `user.account_type`, `user.company` | `POST /api/auth/login` |
+| **Lookups** | `categories`, `skills`, `countries` | `GET /api/job-categories`, `/skills`, `/countries` |
 | **Candidate Profile** | `profile`, `profile.cvs`, `profile.experiences` | `GET /api/candidate/profile` |
 | **Job Search** | `jobs`, `pagination`, `filters` | `GET /api/jobs` |
-| **Job Apply** | `selectedCvId`, `coverNote`, `jobId` | `POST /api/jobs/{id}/apply` |
-| **Active Exam** | `attemptId`, `remainingSeconds`, `answersMap` | `POST /api/candidate/exams/{id}/start` |
+| **Job Apply** | `selectedCvId`, `coverNote`, `consent` | `POST /api/jobs/{id}/apply` |
+| **Active Exam** | `attemptId`, `remainingSeconds`, `cameraConsent` | `POST /api/candidate/exams/{id}/start` |
 | **ATS Kanban** | `applicationsByStatus: { submitted: [], ... }` | `GET /api/company/jobs/{id}/applications` |
 | **Offer** | `offerDetails`, `status: 'sent'` | `GET /api/offers/{id}` |
 
@@ -478,4 +508,3 @@ The entire frontend team can test every single button and payload live right now
 1. Start the server: `php artisan serve`
 2. Open browser: `http://127.0.0.1:8000/docs/api`
 3. Click any endpoint -> Select **"Send API Request"** to see the real response immediately!
-

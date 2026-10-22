@@ -40,16 +40,35 @@ class CompanyJobController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
+        $company = \App\Models\Company::findOrFail($validated['company_id']);
+        if ($company->status === 'pending') {
+            return response()->json([
+                'message' => 'Your company account is pending administrative approval. You cannot publish jobs until your account is approved.',
+            ], 403);
+        }
+
         $validated['created_by'] = $request->user()->id;
         $validated['status'] = $validated['status'] ?? 'published';
         if ($validated['status'] === 'published') {
             $validated['published_at'] = now();
         }
 
-        $job = DB::transaction(function () use ($validated, $skills) {
+        $syncSkills = [];
+        foreach ($skills as $skill) {
+            if (is_array($skill)) {
+                $skillId = $skill['id'] ?? $skill['skill_id'] ?? null;
+                if ($skillId) {
+                    $syncSkills[$skillId] = ['is_required' => $skill['is_required'] ?? true];
+                }
+            } else {
+                $syncSkills[$skill] = ['is_required' => true];
+            }
+        }
+
+        $job = DB::transaction(function () use ($validated, $syncSkills) {
             $job = Job::create($validated);
-            if (! empty($skills)) {
-                $job->skills()->sync($skills);
+            if (! empty($syncSkills)) {
+                $job->skills()->sync($syncSkills);
             }
             return $job;
         });

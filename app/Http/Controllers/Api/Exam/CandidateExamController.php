@@ -45,11 +45,12 @@ class CandidateExamController extends Controller
 
         if (! $activeAttempt) {
             $activeAttempt = ExamAttempt::create([
-                'exam_id'        => $exam->id,
-                'application_id' => $application->id,
-                'attempt_no'     => $attemptCount + 1,
-                'status'         => 'in_progress',
-                'started_at'     => now(),
+                'exam_id'           => $exam->id,
+                'application_id'    => $application->id,
+                'attempt_no'        => $attemptCount + 1,
+                'status'            => 'in_progress',
+                'camera_consent_at' => $request->boolean('camera_consent') ? now() : null,
+                'started_at'        => now(),
             ]);
         }
 
@@ -122,22 +123,29 @@ class CandidateExamController extends Controller
                 'submitted_at' => now(),
             ]);
 
+            $hasManualGrading = $attempt->exam->questions->contains(fn ($q) => in_array($q->question_type, ['written', 'voice', 'coding']));
+            $gradingStatus = $hasManualGrading ? 'pending_review' : 'completed';
+            $gradingMethod = $hasManualGrading ? 'hybrid' : 'auto';
+
             $grading = GradingResult::create([
                 'attempt_id'     => $attempt->id,
                 'total_score'    => $totalScore,
-                'grading_method' => 'auto',
-                'status'         => 'completed',
+                'grading_method' => $gradingMethod,
+                'status'         => $gradingStatus,
             ]);
 
-            return ['attempt' => $attempt, 'grading' => $grading];
+            return ['attempt' => $attempt, 'grading' => $grading, 'has_manual_grading' => $hasManualGrading];
         });
 
         return response()->json([
-            'message'        => 'Exam attempt submitted and graded successfully.',
+            'message'        => $result['has_manual_grading']
+                ? 'Exam attempt submitted. Non-MCQ questions are pending reviewer evaluation.'
+                : 'Exam attempt submitted and graded successfully.',
             'attempt_status' => 'submitted',
+            'grading_status' => $result['grading']->status,
             'total_score'    => (float) $result['grading']->total_score,
             'passing_score'  => (float) $attempt->exam->passing_score,
-            'is_passed'      => (float) $result['grading']->total_score >= (float) $attempt->exam->passing_score,
+            'is_passed'      => $result['has_manual_grading'] ? null : ((float) $result['grading']->total_score >= (float) $attempt->exam->passing_score),
         ], 200);
     }
 

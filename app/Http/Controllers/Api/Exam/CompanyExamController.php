@@ -55,7 +55,7 @@ class CompanyExamController extends Controller
             foreach ($options as $opt) {
                 QuestionOption::create([
                     'question_id' => $q->id,
-                    'option_text' => $opt['text'],
+                    'option_text' => $opt['option_text'] ?? $opt['text'] ?? '',
                     'is_correct'  => $opt['is_correct'] ?? false,
                 ]);
             }

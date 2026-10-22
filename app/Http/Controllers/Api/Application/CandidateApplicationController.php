@@ -67,6 +67,7 @@ class CandidateApplicationController extends Controller
                 'status'       => 'submitted',
                 'attempt_no'   => $latestAttempt + 1,
                 'applied_at'   => now(),
+                'consent_at'   => ($validated['consent'] ?? false) ? now() : null,
             ]);
 
             ApplicationStatusHistory::create([

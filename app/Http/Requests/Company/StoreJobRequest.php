@@ -32,7 +32,6 @@ class StoreJobRequest extends FormRequest
             'deadline'         => ['nullable', 'date', 'after:today'],
             'visibility'       => ['nullable', Rule::in(['public', 'private'])],
             'skills'           => ['nullable', 'array'],
-            'skills.*'         => ['integer', 'exists:skills,id'],
         ];
     }
 }
