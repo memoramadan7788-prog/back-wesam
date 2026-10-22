@@ -12,7 +12,6 @@ class Application extends Model
 {
     use SoftDeletes, Auditable;
 
-
     protected $table = 'applications';
     protected $guarded = [];
 
@@ -32,14 +31,29 @@ class Application extends Model
         return $this->belongsTo(CandidateProfile::class, 'candidate_id');
     }
 
+    public function candidateProfile(): BelongsTo
+    {
+        return $this->candidate();
+    }
+
     public function cv(): BelongsTo
     {
         return $this->belongsTo(CandidateCv::class, 'cv_id');
     }
 
+    public function candidateCv(): BelongsTo
+    {
+        return $this->cv();
+    }
+
     public function applicationStatusHistory(): HasMany
     {
         return $this->hasMany(ApplicationStatusHistory::class, 'application_id');
+    }
+
+    public function applicationStatusHistories(): HasMany
+    {
+        return $this->applicationStatusHistory();
     }
 
     public function offers(): HasMany

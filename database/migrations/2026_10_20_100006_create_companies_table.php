@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->enum('status', ['pending', 'approved', 'rejected', 'suspended'])->default('pending')->index();
             $table->foreignId('account_status_id')->nullable()->default(1)->constrained('account_statuses');
-            $table->foreignId('owner_user_id')->constrained('users');
+            $table->foreignId('owner_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
             $table->text('rejection_reason')->nullable();

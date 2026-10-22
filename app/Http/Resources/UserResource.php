@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+/**
+ * @mixin \App\Models\User
+ */
+class UserResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id'                 => $this->id,
+            'name'               => $this->name,
+            'email'              => $this->email,
+            'account_type'       => $this->account_type,
+            'account_status_id'  => $this->account_status_id,
+            'account_status'     => $this->accountStatus?->name,
+            'roles'              => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
+            'candidate_profile'  => $this->whenLoaded('candidateProfile', fn () => [
+                'id'               => $this->candidateProfile->id,
+                'headline'         => $this->candidateProfile->headline,
+                'phone'            => $this->candidateProfile->phone,
+                'years_experience' => $this->candidateProfile->years_experience,
+            ]),
+            'created_at'         => $this->created_at?->toIso8601String(),
+        ];
+    }
+}
+

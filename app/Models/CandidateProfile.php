@@ -13,7 +13,6 @@ class CandidateProfile extends Model
 {
     use SoftDeletes, Auditable;
 
-
     protected $table = 'candidate_profiles';
     protected $guarded = [];
 
@@ -31,9 +30,19 @@ class CandidateProfile extends Model
         return $this->hasMany(CandidateExperience::class, 'candidate_id');
     }
 
+    public function candidateExperiences(): HasMany
+    {
+        return $this->candidateExperience();
+    }
+
     public function candidateEducation(): HasMany
     {
         return $this->hasMany(CandidateEducation::class, 'candidate_id');
+    }
+
+    public function candidateEducations(): HasMany
+    {
+        return $this->candidateEducation();
     }
 
     public function candidateCourses(): HasMany

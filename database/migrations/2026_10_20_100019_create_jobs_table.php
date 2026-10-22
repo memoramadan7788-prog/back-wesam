@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('jobs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->constrained('companies');
-            $table->foreignId('category_id')->constrained('job_categories');
-            $table->foreignId('created_by')->constrained('users');
+            $table->foreignId('category_id')->nullable()->constrained('job_categories');
+            $table->foreignId('created_by')->nullable()->constrained('users');
             $table->string('title');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->string('location')->nullable();
             $table->enum('work_mode', ['onsite', 'remote', 'hybrid'])->default('onsite');
             $table->string('employment_type')->default('full_time');
@@ -31,7 +31,9 @@ return new class extends Migration
             $table->enum('status', ['draft', 'published', 'closed', 'archived'])->default('draft')->index();
             $table->timestamp('published_at')->nullable();
             $table->timestamp('closed_at')->nullable();
-            $table->fullText(['title', 'description']);
+            if (\Illuminate\Support\Facades\DB::getDriverName() !== 'sqlite') {
+                $table->fullText(['title', 'description']);
+            }
             $table->foreignId('UID')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('LUID')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

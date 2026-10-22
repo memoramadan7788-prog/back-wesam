@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('interview_id')->constrained('interviews');
             $table->foreignId('evaluator_id')->constrained('users');
-            $table->decimal('numeric_score', 4, 2);
+            $table->decimal('numeric_score', 5, 2);
             $table->text('internal_notes');
             $table->text('candidate_feedback')->nullable();
             $table->timestamp('feedback_shared_at')->nullable();

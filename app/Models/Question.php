@@ -12,7 +12,6 @@ class Question extends Model
 {
     use SoftDeletes, Auditable;
 
-
     protected $table = 'questions';
     protected $guarded = [];
 
@@ -29,6 +28,11 @@ class Question extends Model
     public function questionOptions(): HasMany
     {
         return $this->hasMany(QuestionOption::class, 'question_id');
+    }
+
+    public function options(): HasMany
+    {
+        return $this->questionOptions();
     }
 
     public function questionTestCases(): HasMany

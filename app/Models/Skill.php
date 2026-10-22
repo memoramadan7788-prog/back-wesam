@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Skill extends Model
 {
-    use SoftDeletes, Auditable;
+    use HasFactory, SoftDeletes, Auditable;
 
 
     protected $table = 'skills';
