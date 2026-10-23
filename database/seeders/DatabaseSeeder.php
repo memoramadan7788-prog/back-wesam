@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             SkillSeeder::class,
             CountrySeeder::class,
             SalaryRecordSeeder::class,
+            DemoDataSeeder::class,
         ]);
     }
 }
