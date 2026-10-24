@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Models\Admin;
 use App\Models\Interview;
 use App\Models\InterviewEvaluation;
 use App\Models\User;
@@ -15,7 +14,7 @@ class InterviewPolicy
 {
     protected function isPlatformAdmin(Authenticatable $user): bool
     {
-        return ($user instanceof Admin) || (isset($user->account_type) && $user->account_type === 'admin');
+        return isset($user->account_type) && $user->account_type === 'admin';
     }
 
     /**
@@ -70,7 +69,7 @@ class InterviewPolicy
 
     /**
      * Determine whether a user can schedule an interview.
-     * Restricts platform Admins (separate identity table) and Candidates.
+     * Restricts platform admins and candidates.
      * Permits authorized company HR/Recruiter users (User model).
      */
     public function schedule(Authenticatable $user): Response
@@ -216,7 +215,7 @@ class InterviewPolicy
 
     /**
      * Helper to verify company recruitment privilege for operational scheduling and cancellations.
-     * Restricts platform Admins (separate identity table) and Candidates.
+     * Restricts platform admins and candidates.
      */
     public function hasRecruitmentPrivilege(Authenticatable $user): bool
     {
@@ -255,7 +254,7 @@ class InterviewPolicy
     }
 
     /**
-     * Helper to verify administrative privilege safely across both User and Admin authenticatables.
+     * Helper to verify administrative privilege for the unified User authenticatable.
      */
     protected function hasAdminPrivilege(Authenticatable $user): bool
     {

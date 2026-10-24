@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Interview;
 
-use App\Models\Admin;
 use App\Models\Interview;
 use App\Models\InterviewBooking;
 use App\Models\InterviewEvaluation;

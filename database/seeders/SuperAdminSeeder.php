@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Admin;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -28,13 +27,7 @@ class SuperAdminSeeder extends Seeder
             $role->id => ['company_id' => null, 'assigned_at' => now()],
         ]);
 
-        // 2. Seed super admin in admins table for /api/admin/login
-        Admin::firstOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@example.com')],
-            [
-                'name' => 'Super Admin',
-                'password' => env('ADMIN_PASSWORD', 'ChangeMe123!'),
-            ]
-        );
+        // Admin authentication uses the users table with account_type=admin.
+        // There is intentionally no separate admins-table record.
     }
 }

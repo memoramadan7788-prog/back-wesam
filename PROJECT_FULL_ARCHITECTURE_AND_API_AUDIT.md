@@ -5,19 +5,19 @@
 ## 1. Executive Summary & System Overview
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
-1. **The Database Catalog:** Complete specification of all **55 physical tables** across the system, detailing their primary keys, audit trail attributes (`UID`, `LUID`, `timestamps`, `softDeletes`), and status.
-2. **Current Implementation (Implemented & Tested 100%):** Detailed inventory of all **73 REST API endpoints**, Controllers, Methods, FormRequests, Resources, Services, Policies, Enums, Models, Seeders, and automated test suites (**139 passing tests with 638 assertions**).
+1. **The Database Catalog:** Complete specification of the **55 final physical tables** across the system, detailing their primary keys, audit trail attributes (`UID`, `LUID`, `timestamps`, `softDeletes`), and status.
+2. **Current Implementation:** The current route inventory contains **101 API route entries** and **86 OpenAPI paths**, backed by **217 passing tests with 1143 assertions**. Admin authentication is consolidated in the `users` table with `account_type=admin`.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
 
 ## 2. Complete Database Catalog (All 55 Tables)
 
-Every table below has been generated via Laravel migrations, verified in MySQL (`php artisan migrate:fresh --seed`), and follows enterprise conventions. Application tables include audit columns (`UID`, `LUID`, `created_at`, `updated_at`, `deleted_at`).
+Every table below is created by Laravel migrations. The complete migration-and-seeding flow is verified by the setup feature test with SQLite; run the same commands against MySQL for local development. Application tables include audit columns (`UID`, `LUID`, `created_at`, `updated_at`, `deleted_at`).
 
 | # | Table Name | Migration File | Primary Purpose / Role | Audit Trail Support |
 |---|------------|----------------|------------------------|---------------------|
-| 1 | `admins` | [2026_10_15_220351_create_admins_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_15_220351_create_admins_table.php) | Admin user credentials & auth | `timestamps` |
+| 1 | `audit_logs` | [2026_10_23_000003_create_audit_logs_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_23_000003_create_audit_logs_table.php) | Administrative and security audit events | `timestamps` |
 | 2 | `account_statuses` | [2026_10_20_100000_create_account_statuses_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100000_create_account_statuses_table.php) | Lookup table for status (Active=1, Deactivated=2, Blocked=3, Deleted=4) | Full (`UID`, `LUID`, SoftDeletes) |
 | 3 | `users` | [2026_10_20_100001_create_users_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100001_create_users_table.php) | Core user identities (Candidates, HR, Interviewers, Admins) | Full (`UID`, `LUID`, SoftDeletes) |
 | 4 | `password_reset_tokens` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | Laravel framework password reset tokens | Framework Internal |
@@ -77,7 +77,7 @@ Every table below has been generated via Laravel migrations, verified in MySQL (
 
 ## 3. Currently Implemented APIs & Components (100% Operational)
 
-All 29 endpoints below are live in [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), return strict JSON, enforce authentication where appropriate, and are backed by **113 passing feature tests**.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 101 API route entries and is backed by the full feature test suite.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -91,12 +91,12 @@ All 29 endpoints below are live in [`routes/api.php`](file:///c:/Projects/hr_man
 
 ### 3.2. Admin Authentication Module
 - **Controller:** [`App\Http\Controllers\Api\Admin\AuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AuthController.php)
-- **Model:** [`App\Models\Admin`](file:///c:/Projects/hr_managment_system/app/Models/Admin.php)
+- **Model:** [`App\Models\User`](file:///c:/Projects/hr_managment_system/app/Models/User.php) with `account_type=admin`
 - **Middleware:** [`App\Http\Middleware\EnsureAdmin`](file:///c:/Projects/hr_managment_system/app/Http/Middleware/EnsureAdmin.php)
 
 | HTTP Method | Route Endpoint | Action / Method | Middleware | Description |
 |:---|:---|:---|:---|:---|
-| `POST` | `/api/admin/login` | `AuthController@login` | None | Authenticate admin via email and password; returns Sanctum bearer token. |
+| `POST` | `/api/admin/login` | `AuthController@login` | None | Authenticate an admin user via email and password; returns Sanctum bearer token. |
 | `POST` | `/api/admin/forgot-password` | `AuthController@forgotPassword` | None | Send admin password reset notification with token. |
 | `POST` | `/api/admin/reset-password` | `AuthController@resetPassword` | None | Reset admin password using verification token. |
 | `POST` | `/api/admin/logout` | `AuthController@logout` | `auth:sanctum`, `admin` | Revoke current admin Sanctum bearer token. |
@@ -594,10 +594,10 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 ## 5. Architectural Quality Checklist & Next Steps
 
 ```text
-[x] 55 Physical tables migrated with audit trail & account_status_id
-[x] Database seeders configured and functional on MySQL (Super Admin, RBAC, Categories, Skills)
-[x] 73 REST API endpoints live in routes/api.php
-[x] 139 automated feature/unit tests passing 100% (638 assertions)
+[x] 55 final physical tables migrated with audit trail & account_status_id (the legacy admins table is removed)
+[x] Database seeders configured for the basic flow (Super Admin in users, RBAC, categories, skills, demo data)
+[x] 101 API route entries live in routes/api.php (86 OpenAPI paths)
+[x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json
 [x] Module 1: User Authentication (Candidate & Company registration, Sanctum auth)
 [x] Module 2: Candidate Profile & CV File Upload (Profile, Experiences, Educations, CV versions)

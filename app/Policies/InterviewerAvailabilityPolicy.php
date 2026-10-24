@@ -2,7 +2,6 @@
 
 namespace App\Policies;
 
-use App\Models\Admin;
 use App\Models\InterviewerAvailability;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -16,7 +15,7 @@ class InterviewerAvailabilityPolicy
      */
     public function viewAny(Authenticatable $user): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators manage availability via administrative controls.');
         }
 
@@ -32,7 +31,7 @@ class InterviewerAvailabilityPolicy
      */
     public function view(Authenticatable $user, InterviewerAvailability $availability): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators manage availability via administrative controls.');
         }
 
@@ -52,7 +51,7 @@ class InterviewerAvailabilityPolicy
      */
     public function create(Authenticatable $user): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators cannot directly create operational interviewer availability.');
         }
 
@@ -68,7 +67,7 @@ class InterviewerAvailabilityPolicy
      */
     public function update(Authenticatable $user, InterviewerAvailability $availability): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators cannot directly modify operational interviewer availability.');
         }
 
@@ -88,7 +87,7 @@ class InterviewerAvailabilityPolicy
      */
     public function delete(Authenticatable $user, InterviewerAvailability $availability): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators cannot directly delete operational interviewer availability.');
         }
 
@@ -108,7 +107,7 @@ class InterviewerAvailabilityPolicy
      */
     public function hasRecruitmentPrivilege(Authenticatable $user): bool
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return false;
         }
 
@@ -147,7 +146,7 @@ class InterviewerAvailabilityPolicy
      */
     protected function isCandidate(Authenticatable $user): bool
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return false;
         }
 
@@ -162,5 +161,10 @@ class InterviewerAvailabilityPolicy
         }
 
         return false;
+    }
+
+    protected function isPlatformAdmin(Authenticatable $user): bool
+    {
+        return isset($user->account_type) && $user->account_type === 'admin';
     }
 }

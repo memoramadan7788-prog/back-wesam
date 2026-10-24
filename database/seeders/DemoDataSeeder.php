@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\AccountStatus;
-use App\Models\Admin;
 use App\Models\Application;
 use App\Models\ApplicationStatusHistory;
 use App\Models\CandidateCv;
