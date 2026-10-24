@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterCandidateRequest;
 use App\Http\Requests\Auth\RegisterCompanyRequest;
+use App\Http\Requests\Auth\RegisterEmployeeRequest;
 use App\Http\Resources\UserResource;
 use App\Models\AccountStatus;
 use App\Models\CandidateProfile;
@@ -55,8 +56,10 @@ class UserAuthController extends Controller
 
         return response()->json([
             'message' => 'Candidate registered successfully.',
-            'user'    => new UserResource($user->load(['roles', 'candidateProfile', 'accountStatus'])),
+            'user'    => new UserResource($user->load(['roles.permissions', 'candidateProfile', 'accountStatus'])),
+            'access_token' => $token,
             'token'   => $token,
+            'token_type' => 'Bearer',
         ], 201);
     }
 
@@ -101,9 +104,37 @@ class UserAuthController extends Controller
 
         return response()->json([
             'message' => 'Company registered successfully. Account pending review.',
-            'user'    => new UserResource($user->load(['roles', 'accountStatus'])),
+            'user'    => new UserResource($user->load(['roles.permissions', 'accountStatus'])),
             'company' => $data['company'],
+            'access_token' => $token,
             'token'   => $token,
+            'token_type' => 'Bearer',
+        ], 201);
+    }
+
+    /**
+     * POST /api/auth/register/employee
+     */
+    public function registerEmployee(RegisterEmployeeRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $user = User::create([
+            'name'              => $validated['name'],
+            'email'             => $validated['email'],
+            'password'          => Hash::make($validated['password']),
+            'account_type'      => 'company',
+            'account_status_id' => AccountStatus::ACTIVE,
+        ]);
+
+        $token = $user->createToken('employee-token', ['company'])->plainTextToken;
+
+        return response()->json([
+            'message'      => 'Employee account registered successfully. Please submit a join request to your company.',
+            'user'         => new UserResource($user->load(['roles.permissions', 'accountStatus'])),
+            'token'        => $token,
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
         ], 201);
     }
 
@@ -122,9 +153,9 @@ class UserAuthController extends Controller
             ]);
         }
 
-        if ($user->account_status_id === AccountStatus::BLOCKED || $user->account_status_id === AccountStatus::DELETED) {
+        if ($user->account_status_id !== AccountStatus::ACTIVE) {
             return response()->json([
-                'message' => 'This account has been suspended or deleted. Please contact support.',
+                'message' => 'This account is inactive, suspended, or deleted. Please contact support.',
             ], 403);
         }
 
@@ -132,9 +163,11 @@ class UserAuthController extends Controller
         $token = $user->createToken('auth-token', $abilities)->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful.',
-            'user'    => new UserResource($user->load(['roles', 'candidateProfile', 'accountStatus', 'ownedCompanies', 'companyEmployee.company'])),
-            'token'   => $token,
+            'message'      => 'Login successful.',
+            'user'         => new UserResource($user->load(['roles.permissions', 'candidateProfile', 'accountStatus', 'ownedCompanies', 'companyEmployee.company'])),
+            'token'        => $token,
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
         ], 200);
     }
 
@@ -155,11 +188,19 @@ class UserAuthController extends Controller
 
     /**
      * GET /api/auth/me
+     *
+     * Returns user + company + roles + aggregated permissions (Phase 0.2).
      */
     public function me(Request $request): UserResource
     {
         return new UserResource(
-            $request->user()->load(['roles', 'candidateProfile', 'accountStatus'])
+            $request->user()->load([
+                'roles.permissions',
+                'candidateProfile',
+                'accountStatus',
+                'ownedCompanies',
+                'companyEmployee.company',
+            ])
         );
     }
 }

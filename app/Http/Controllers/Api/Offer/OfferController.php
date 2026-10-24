@@ -82,12 +82,21 @@ class OfferController extends Controller
      */
     public function accept(Request $request, int $id): JsonResponse
     {
-        $profile = CandidateProfile::firstOrCreate(['user_id' => $request->user()->id]);
+        $offer = Offer::with('application')->findOrFail($id);
+        $profile = CandidateProfile::where('user_id', $request->user()->id)->first();
 
-        $offer = Offer::with('application')
-            ->whereHas('application', fn ($q) => $q->where('candidate_id', $profile->id))
-            ->where('status', 'sent')
-            ->findOrFail($id);
+        if (! $profile || (int) $offer->application?->candidate_id !== (int) $profile->id) {
+            abort(403, 'You are not authorized to respond to this offer.');
+        }
+
+        if ($offer->status !== 'sent') {
+            abort(409, "Cannot accept offer with status '{$offer->status}'. Only 'sent' offers can be accepted.");
+        }
+
+        if ($offer->expires_at && \Carbon\Carbon::parse($offer->expires_at)->isPast()) {
+            $offer->update(['status' => 'expired']);
+            abort(409, 'This job offer has expired.');
+        }
 
         DB::transaction(function () use ($offer, $request) {
             $offer->update([
@@ -119,12 +128,21 @@ class OfferController extends Controller
      */
     public function reject(RespondOfferRequest $request, int $id): JsonResponse
     {
-        $profile = CandidateProfile::firstOrCreate(['user_id' => $request->user()->id]);
+        $offer = Offer::with('application')->findOrFail($id);
+        $profile = CandidateProfile::where('user_id', $request->user()->id)->first();
 
-        $offer = Offer::with('application')
-            ->whereHas('application', fn ($q) => $q->where('candidate_id', $profile->id))
-            ->where('status', 'sent')
-            ->findOrFail($id);
+        if (! $profile || (int) $offer->application?->candidate_id !== (int) $profile->id) {
+            abort(403, 'You are not authorized to respond to this offer.');
+        }
+
+        if ($offer->status !== 'sent') {
+            abort(409, "Cannot reject offer with status '{$offer->status}'. Only 'sent' offers can be rejected.");
+        }
+
+        if ($offer->expires_at && \Carbon\Carbon::parse($offer->expires_at)->isPast()) {
+            $offer->update(['status' => 'expired']);
+            abort(409, 'This job offer has expired.');
+        }
 
         DB::transaction(function () use ($offer, $request) {
             $offer->update([

@@ -7,6 +7,7 @@ use App\Http\Requests\Company\ChangeJobStatusRequest;
 use App\Http\Requests\Company\StoreJobRequest;
 use App\Http\Requests\Company\UpdateJobRequest;
 use App\Http\Resources\CompanyJobResource;
+use App\Models\Company;
 use App\Models\Job;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,8 @@ class CompanyJobController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $companyId = $request->query('company_id');
+        $user = $request->user();
+        $companyId = $user->resolveCompanyId();
 
         $jobs = Job::with(['company', 'category', 'skills'])
             ->withCount('applications')
@@ -33,6 +35,9 @@ class CompanyJobController extends Controller
 
     /**
      * POST /api/company/jobs
+     *
+     * company_id is auto-resolved from the authenticated user (Phase 0.1).
+     * Any company_id sent in the request body is ignored.
      */
     public function store(StoreJobRequest $request): JsonResponse
     {
@@ -40,14 +45,24 @@ class CompanyJobController extends Controller
         $skills = $validated['skills'] ?? [];
         unset($validated['skills']);
 
-        $company = \App\Models\Company::findOrFail($validated['company_id']);
+        $user = $request->user();
+        $companyId = $user->resolveCompanyId();
+
+        if (! $companyId) {
+            return response()->json([
+                'message' => 'You are not associated with any company.',
+            ], 403);
+        }
+
+        $company = Company::findOrFail($companyId);
         if ($company->status === 'pending') {
             return response()->json([
                 'message' => 'Your company account is pending administrative approval. You cannot publish jobs until your account is approved.',
             ], 403);
         }
 
-        $validated['created_by'] = $request->user()->id;
+        $validated['company_id'] = $companyId;
+        $validated['created_by'] = $user->id;
         $validated['status'] = $validated['status'] ?? 'published';
         if ($validated['status'] === 'published') {
             $validated['published_at'] = now();
@@ -82,11 +97,20 @@ class CompanyJobController extends Controller
     /**
      * GET /api/company/jobs/{id}
      */
-    public function show(Request $request, int $id): CompanyJobResource
+    public function show(Request $request, int $id): CompanyJobResource|JsonResponse
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $job = Job::with(['company', 'category', 'skills'])
             ->withCount('applications')
             ->findOrFail($id);
+
+        if ($user->account_type !== 'admin' && (int) $job->company_id !== (int) $userCompanyId) {
+            return response()->json([
+                'message' => 'You do not have permission to access resources belonging to another company.',
+            ], 403);
+        }
 
         return new CompanyJobResource($job);
     }
@@ -96,7 +120,17 @@ class CompanyJobController extends Controller
      */
     public function update(UpdateJobRequest $request, int $id): JsonResponse
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $job = Job::findOrFail($id);
+
+        if ($user->account_type !== 'admin' && (int) $job->company_id !== (int) $userCompanyId) {
+            return response()->json([
+                'message' => 'You do not have permission to access resources belonging to another company.',
+            ], 403);
+        }
+
         $validated = $request->validated();
 
         $skills = $validated['skills'] ?? null;
@@ -120,7 +154,17 @@ class CompanyJobController extends Controller
      */
     public function changeStatus(ChangeJobStatusRequest $request, int $id): JsonResponse
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $job = Job::findOrFail($id);
+
+        if ($user->account_type !== 'admin' && (int) $job->company_id !== (int) $userCompanyId) {
+            return response()->json([
+                'message' => 'You do not have permission to access resources belonging to another company.',
+            ], 403);
+        }
+
         $status = $request->validated()['status'];
 
         $updates = ['status' => $status];
@@ -143,7 +187,17 @@ class CompanyJobController extends Controller
      */
     public function destroy(Request $request, int $id): JsonResponse
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $job = Job::findOrFail($id);
+
+        if ($user->account_type !== 'admin' && (int) $job->company_id !== (int) $userCompanyId) {
+            return response()->json([
+                'message' => 'You do not have permission to access resources belonging to another company.',
+            ], 403);
+        }
+
         $job->delete();
 
         return response()->json([
@@ -151,4 +205,3 @@ class CompanyJobController extends Controller
         ], 200);
     }
 }
-

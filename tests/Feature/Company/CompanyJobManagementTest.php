@@ -20,7 +20,7 @@ class CompanyJobManagementTest extends TestCase
 
         Job::factory()->count(3)->create(['company_id' => $company->id]);
 
-        $response = $this->actingAs($user)->getJson("/api/company/jobs?company_id={$company->id}");
+        $response = $this->actingAs($user)->getJson('/api/company/jobs');
 
         $response->assertStatus(200);
         $response->assertJsonCount(3, 'data');
@@ -34,7 +34,7 @@ class CompanyJobManagementTest extends TestCase
         $skill2 = Skill::create(['name' => 'Vue.js']);
 
         $payload = [
-            'company_id'       => $company->id,
+            // company_id is auto-resolved from authenticated user (Phase 0.1)
             'title'            => 'Senior Fullstack Engineer',
             'description'      => 'We are looking for an experienced full stack developer who loves clean code and robust systems.',
             'location'         => 'Cairo, Egypt',
@@ -67,6 +67,36 @@ class CompanyJobManagementTest extends TestCase
         ]);
     }
 
+    public function test_job_creation_uses_only_canonical_store_job_field_names(): void
+    {
+        $user = User::factory()->create();
+        Company::factory()->create(['owner_user_id' => $user->id]);
+
+        $response = $this->actingAs($user)->postJson('/api/company/jobs', [
+            'title'            => 'Legacy Payload Job',
+            'description'      => 'This payload intentionally uses legacy field aliases and must be rejected.',
+            'job_category_id'  => 1,
+            'workplace_type'   => 'remote',
+            'min_salary'       => 1000,
+            'max_salary'       => 2000,
+            'city'             => 'Cairo',
+            'country_id'       => 1,
+            'employment_type'  => 'full_time',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors([
+            'job_category_id',
+            'workplace_type',
+            'min_salary',
+            'max_salary',
+            'city',
+            'country_id',
+            'work_mode',
+        ]);
+        $this->assertDatabaseMissing('jobs', ['title' => 'Legacy Payload Job']);
+    }
+
     public function test_company_can_view_single_job(): void
     {
         $user = User::factory()->create();
@@ -87,7 +117,6 @@ class CompanyJobManagementTest extends TestCase
         $job = Job::factory()->create(['company_id' => $company->id, 'title' => 'Junior Developer']);
 
         $response = $this->actingAs($user)->putJson("/api/company/jobs/{$job->id}", [
-            'company_id'      => $company->id,
             'title'           => 'Mid-level Developer',
             'description'     => 'Updated description for this open mid-level developer role.',
             'work_mode'       => 'remote',
@@ -136,4 +165,3 @@ class CompanyJobManagementTest extends TestCase
         $this->assertSoftDeleted('jobs', ['id' => $job->id]);
     }
 }
-

@@ -3,15 +3,24 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Admin;
+use App\Http\Resources\UserResource;
+use App\Models\AccountStatus;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
 
+/**
+ * Admin Authentication Controller.
+ *
+ * Phase 0.5: Consolidated to use the `users` table with account_type='admin'
+ * instead of the separate `admins` table.
+ */
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email'],
@@ -25,45 +34,52 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $admin = Admin::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)
+            ->where('account_type', 'admin')
+            ->first();
 
-        if (! $admin || ! Hash::check(
-            $request->password,
-            $admin->password
-        )) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Invalid credentials.',
             ], 401);
         }
 
-        $token = $admin->createToken('admin-api')->plainTextToken;
+        if ($user->account_status_id !== AccountStatus::ACTIVE) {
+            return response()->json([
+                'message' => 'This admin account is inactive, suspended, or deleted.',
+            ], 403);
+        }
+
+        $token = $user->createToken('admin-api', ['admin'])->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful.',
-            'admin' => [
-                'id' => $admin->id,
-                'name' => $admin->name,
-                'email' => $admin->email,
+            'message'      => 'Login successful.',
+            'admin'        => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
             ],
-            'token_type' => 'Bearer',
+            'token_type'   => 'Bearer',
             'access_token' => $token,
+            'token'        => $token,
         ], 200);
     }
 
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
-        $admin = $request->user();
+        $user = $request->user();
 
         return response()->json([
             'admin' => [
-                'id' => $admin->id,
-                'name' => $admin->name,
-                'email' => $admin->email,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
             ],
+            'user' => new UserResource($user->load(['roles.permissions', 'accountStatus'])),
         ], 200);
     }
 
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
         $token = $request->user()->currentAccessToken();
 
@@ -80,68 +96,67 @@ class AuthController extends Controller
         ], 200);
     }
 
-public function forgotPassword(Request $request)
-{
-    $request->validate([
-        'email' => ['required', 'email'],
-    ]);
+    public function forgotPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+        ]);
 
-    $status = Password::broker('admins')->sendResetLink(
-        $request->only('email')
-    );
+        // Use default password broker (users table) instead of admins broker
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
 
-    if ($status === Password::RESET_LINK_SENT) {
-        return response()->json([
-            'message' => 'If the email is registered, a password reset link will be sent.',
-        ], 200);
-    }
-
-    if ($status === Password::RESET_THROTTLED) {
-        return response()->json([
-            'message' => 'Please wait before requesting another reset link.',
-        ], 429);
-    }
-
-    return response()->json([
-        'message' => 'Unable to send the password reset link.',
-    ], 400);
-}
-
-
-public function resetPassword(Request $request)
-{
-    $request->validate([
-        'email' => ['required', 'email'],
-        'token' => ['required', 'string'],
-        'password' => ['required', 'string', 'min:8', 'confirmed'],
-    ]);
-
-    $status = Password::broker('admins')->reset(
-        $request->only(
-            'email',
-            'token',
-            'password',
-            'password_confirmation'
-        ),
-        function (Admin $admin, string $password) {
-            $admin->forceFill([
-                'password' => Hash::make($password),
-            ])->save();
-
-            // Revoke all existing Sanctum tokens.
-            $admin->tokens()->delete();
+        if ($status === Password::RESET_LINK_SENT) {
+            return response()->json([
+                'message' => 'If the email is registered, a password reset link will be sent.',
+            ], 200);
         }
-    );
 
-    if ($status === Password::PASSWORD_RESET) {
+        if ($status === Password::RESET_THROTTLED) {
+            return response()->json([
+                'message' => 'Please wait before requesting another reset link.',
+            ], 429);
+        }
+
         return response()->json([
-            'message' => 'Password has been reset successfully.',
-        ], 200);
+            'message' => 'Unable to send the password reset link.',
+        ], 400);
     }
 
-    return response()->json([
-        'message' => 'Invalid or expired password reset token.',
-    ], 400);
-}
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
 
+        $status = Password::reset(
+            $request->only(
+                'email',
+                'token',
+                'password',
+                'password_confirmation'
+            ),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->save();
+
+                // Revoke all existing Sanctum tokens.
+                $user->tokens()->delete();
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json([
+                'message' => 'Password has been reset successfully.',
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => 'Invalid or expired password reset token.',
+        ], 400);
+    }
 }

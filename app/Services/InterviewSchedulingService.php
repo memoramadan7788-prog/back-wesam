@@ -76,7 +76,12 @@ class InterviewSchedulingService
                     ]);
                 }
 
-                if (strtolower((string) $slot->availability_status) !== 'open') {
+                $hasActiveBooking = InterviewBooking::where('availability_id', $availabilityId)
+                    ->where('booking_status', '!=', 'cancelled')
+                    ->lockForUpdate()
+                    ->exists();
+
+                if (strtolower((string) $slot->availability_status) !== 'open' || $hasActiveBooking) {
                     throw ValidationException::withMessages([
                         "bookings.{$index}.availability_id" => ["Availability slot #{$availabilityId} is not available (status: {$slot->availability_status})."],
                     ]);
@@ -274,6 +279,9 @@ class InterviewSchedulingService
                         'cancelled_at' => Carbon::now(),
                     ]);
 
+                    // Soft-delete the booking so the availability_id can be reused (Phase 0.3)
+                    $booking->delete();
+
                     // Release availability slot only if not occupied by another active booking
                     $this->releaseAvailabilitySlotIfUnoccupied($availabilityId);
                 }
@@ -336,7 +344,12 @@ class InterviewSchedulingService
                 ->lockForUpdate()
                 ->first();
 
-            if (!$slot || strtolower((string) $slot->availability_status) !== 'open') {
+            $hasActiveBooking = InterviewBooking::where('availability_id', $availabilityId)
+                ->where('booking_status', '!=', 'cancelled')
+                ->lockForUpdate()
+                ->exists();
+
+            if (!$slot || strtolower((string) $slot->availability_status) !== 'open' || $hasActiveBooking) {
                 abort(409, 'This slot is no longer available.');
             }
 

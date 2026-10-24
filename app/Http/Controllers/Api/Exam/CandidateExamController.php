@@ -75,6 +75,19 @@ class CandidateExamController extends Controller
             ], 409);
         }
 
+        if ($attempt->started_at
+            && now()->greaterThanOrEqualTo($attempt->started_at->copy()->addMinutes((int) $attempt->exam->time_limit_min))) {
+            $attempt->update([
+                'status'       => 'expired',
+                'submitted_at' => now(),
+            ]);
+
+            return response()->json([
+                'message' => "Exam time limit of {$attempt->exam->time_limit_min} minutes has expired.",
+                'status'  => 'expired',
+            ], 409);
+        }
+
         $validated = $request->validated();
         $answersData = $validated['answers'];
 

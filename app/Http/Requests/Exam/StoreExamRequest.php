@@ -14,7 +14,7 @@ class StoreExamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'     => ['required', 'integer', 'exists:companies,id'],
+            // company_id is auto-resolved from the authenticated user (Phase 0.1)
             'title'          => ['required', 'string', 'max:255'],
             'time_limit_min' => ['required', 'integer', 'min:5', 'max:300'],
             'passing_score'  => ['required', 'numeric', 'min:0', 'max:100'],
@@ -22,4 +22,3 @@ class StoreExamRequest extends FormRequest
         ];
     }
 }
-

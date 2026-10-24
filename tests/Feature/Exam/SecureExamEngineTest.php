@@ -24,7 +24,7 @@ class SecureExamEngineTest extends TestCase
         $company = Company::factory()->create(['owner_user_id' => $user->id]);
 
         $examResponse = $this->actingAs($user)->postJson('/api/company/exams', [
-            'company_id'     => $company->id,
+            // company_id is auto-resolved from authenticated user (Phase 0.1)
             'title'          => 'PHP & Laravel Core Assessment',
             'time_limit_min' => 45,
             'passing_score'  => 70,
@@ -221,5 +221,109 @@ class SecureExamEngineTest extends TestCase
         $response->assertStatus(403);
         $response->assertJsonPath('message', 'Maximum trial attempts (2 attempts) reached for this exam.');
     }
-}
 
+    public function test_company_can_attach_exam_with_default_or_explicit_stage_order(): void
+    {
+        $companyOwner = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $companyOwner->id]);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+
+        $firstExam = Exam::create([
+            'company_id'     => $company->id,
+            'created_by'     => $companyOwner->id,
+            'title'          => 'First Exam',
+            'time_limit_min' => 30,
+            'passing_score'  => 70,
+            'attempt_limit'  => 3,
+            'status'         => 'published',
+        ]);
+        $secondExam = Exam::create([
+            'company_id'     => $company->id,
+            'created_by'     => $companyOwner->id,
+            'title'          => 'Second Exam',
+            'time_limit_min' => 30,
+            'passing_score'  => 70,
+            'attempt_limit'  => 3,
+            'status'         => 'published',
+        ]);
+
+        $this->actingAs($companyOwner)
+            ->postJson("/api/company/jobs/{$job->id}/exams/{$firstExam->id}/attach")
+            ->assertStatus(200)
+            ->assertJsonPath('stage_order', 1);
+
+        $this->actingAs($companyOwner)
+            ->postJson("/api/company/jobs/{$job->id}/exams/{$secondExam->id}/attach")
+            ->assertStatus(200)
+            ->assertJsonPath('stage_order', 2);
+
+        $this->assertDatabaseHas('job_exams', [
+            'job_id'      => $job->id,
+            'exam_id'     => $secondExam->id,
+            'stage_order' => 2,
+        ]);
+
+        $this->actingAs($companyOwner)
+            ->postJson("/api/company/jobs/{$job->id}/exams/{$secondExam->id}/attach", ['stage_order' => 7])
+            ->assertStatus(200)
+            ->assertJsonPath('stage_order', 7);
+    }
+
+    public function test_submitting_after_exam_time_limit_returns_conflict_and_expires_attempt(): void
+    {
+        $companyOwner = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $companyOwner->id]);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+        $candidateUser = User::factory()->create();
+        $candidateProfile = CandidateProfile::create(['user_id' => $candidateUser->id]);
+        $application = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $candidateProfile->id,
+            'status'       => 'submitted',
+        ]);
+        $exam = Exam::create([
+            'company_id'     => $company->id,
+            'created_by'     => $companyOwner->id,
+            'title'          => 'Timed Exam',
+            'time_limit_min' => 30,
+            'passing_score'  => 70,
+            'attempt_limit'  => 3,
+            'status'         => 'published',
+        ]);
+        $question = Question::create([
+            'exam_id'       => $exam->id,
+            'question_type' => 'mcq',
+            'content'       => 'What is 2 + 2?',
+            'points'        => 10,
+            'order_no'      => 1,
+            'status'        => 'published',
+        ]);
+        $option = QuestionOption::create([
+            'question_id' => $question->id,
+            'option_text' => '4',
+            'is_correct'  => true,
+        ]);
+        $attempt = ExamAttempt::create([
+            'exam_id'        => $exam->id,
+            'application_id' => $application->id,
+            'attempt_no'     => 1,
+            'status'         => 'in_progress',
+            'started_at'     => now()->subMinutes(31),
+        ]);
+
+        $response = $this->actingAs($candidateUser)->postJson("/api/candidate/exam-attempts/{$attempt->id}/submit", [
+            'answers' => [[
+                'question_id'        => $question->id,
+                'selected_option_id' => $option->id,
+            ]],
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('status', 'expired');
+        $response->assertJsonPath('message', 'Exam time limit of 30 minutes has expired.');
+        $this->assertDatabaseHas('exam_attempts', [
+            'id'     => $attempt->id,
+            'status' => 'expired',
+        ]);
+    }
+}

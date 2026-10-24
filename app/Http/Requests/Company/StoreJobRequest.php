@@ -15,7 +15,14 @@ class StoreJobRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_id'       => ['required', 'integer', 'exists:companies,id'],
+            // company_id is auto-resolved from the authenticated user (Phase 0.1)
+            // Legacy aliases are intentionally rejected; clients must use the canonical API contract.
+            'job_category_id'  => ['prohibited'],
+            'workplace_type'   => ['prohibited'],
+            'min_salary'       => ['prohibited'],
+            'max_salary'       => ['prohibited'],
+            'city'             => ['prohibited'],
+            'country_id'       => ['prohibited'],
             'category_id'      => ['nullable', 'integer', 'exists:job_categories,id'],
             'title'            => ['required', 'string', 'max:255'],
             'description'      => ['required', 'string', 'min:20'],
@@ -35,4 +42,3 @@ class StoreJobRequest extends FormRequest
         ];
     }
 }
-

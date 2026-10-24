@@ -159,6 +159,94 @@ class OfferLifecycleTest extends TestCase
         ]);
     }
 
+    public function test_candidate_cannot_accept_or_reject_an_offer_that_is_not_sent(): void
+    {
+        $employer = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $employer->id]);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+        $candidate = User::factory()->create();
+        $profile = CandidateProfile::create(['user_id' => $candidate->id]);
+
+        $acceptedApplication = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $profile->id,
+            'status'       => 'hired',
+            'attempt_no'   => 1,
+        ]);
+        $acceptedOffer = Offer::create([
+            'application_id' => $acceptedApplication->id,
+            'salary_amount'  => 30000,
+            'currency'       => 'EGP',
+            'salary_period'  => 'month',
+            'start_date'     => now()->addDays(10)->toDateString(),
+            'status'         => 'accepted',
+            'sent_by'        => $employer->id,
+            'sent_at'        => now(),
+        ]);
+
+        $rejectedApplication = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $profile->id,
+            'status'       => 'rejected',
+            'attempt_no'   => 2,
+        ]);
+        $rejectedOffer = Offer::create([
+            'application_id' => $rejectedApplication->id,
+            'salary_amount'  => 25000,
+            'currency'       => 'EGP',
+            'salary_period'  => 'month',
+            'start_date'     => now()->addDays(10)->toDateString(),
+            'status'         => 'rejected',
+            'sent_by'        => $employer->id,
+            'sent_at'        => now(),
+        ]);
+
+        $this->actingAs($candidate)
+            ->postJson("/api/candidate/offers/{$acceptedOffer->id}/accept")
+            ->assertStatus(409)
+            ->assertJsonPath('message', "Cannot accept offer with status 'accepted'. Only 'sent' offers can be accepted.");
+
+        $this->actingAs($candidate)
+            ->postJson("/api/candidate/offers/{$rejectedOffer->id}/reject", ['reason' => 'No longer interested.'])
+            ->assertStatus(409)
+            ->assertJsonPath('message', "Cannot reject offer with status 'rejected'. Only 'sent' offers can be rejected.");
+    }
+
+    public function test_candidate_cannot_respond_to_another_candidates_offer(): void
+    {
+        $employer = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $employer->id]);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+        $ownerCandidate = User::factory()->create();
+        $ownerProfile = CandidateProfile::create(['user_id' => $ownerCandidate->id]);
+        $otherCandidate = User::factory()->create();
+        $application = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $ownerProfile->id,
+            'status'       => 'offered',
+        ]);
+        $offer = Offer::create([
+            'application_id' => $application->id,
+            'salary_amount'  => 28000,
+            'currency'       => 'EGP',
+            'salary_period'  => 'month',
+            'start_date'     => now()->addDays(10)->toDateString(),
+            'status'         => 'sent',
+            'sent_by'        => $employer->id,
+            'sent_at'        => now(),
+        ]);
+
+        $this->actingAs($otherCandidate)
+            ->postJson("/api/candidate/offers/{$offer->id}/accept")
+            ->assertStatus(403);
+
+        $this->actingAs($otherCandidate)
+            ->postJson("/api/candidate/offers/{$offer->id}/reject", ['reason' => 'Not mine.'])
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('offers', ['id' => $offer->id, 'status' => 'sent']);
+    }
+
     public function test_salary_benchmark_returns_market_summary(): void
     {
         $user = User::factory()->create();

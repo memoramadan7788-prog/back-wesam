@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\AuditLogController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\Admin\CompanyManagementController;
+use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Application\CandidateApplicationController;
 use App\Http\Controllers\Api\Application\CompanyApplicationController;
 use App\Http\Controllers\Api\Auth\UserAuthController;
@@ -10,7 +13,10 @@ use App\Http\Controllers\Api\Candidate\CandidateExperienceController;
 use App\Http\Controllers\Api\Candidate\CandidateProfileController;
 use App\Http\Controllers\Api\CandidateAvailableSlotsController;
 use App\Http\Controllers\Api\CandidateInterviewController;
+use App\Http\Controllers\Api\Company\CompanyEmployeeController;
 use App\Http\Controllers\Api\Company\CompanyJobController;
+use App\Http\Controllers\Api\Company\JobInterviewRoundController;
+use App\Http\Controllers\Api\Company\CompanyInterviewController;
 use App\Http\Controllers\Api\Exam\CandidateExamController;
 use App\Http\Controllers\Api\Exam\CompanyExamController;
 use App\Http\Controllers\Api\InterviewEvaluationController;
@@ -28,6 +34,13 @@ use Illuminate\Support\Facades\Route;
 | General / Basic Routes
 |--------------------------------------------------------------------------
 */
+Route::get('/', function () {
+    return response()->json([
+        'status' => 'ok',
+        'message' => 'HR Management System API is running',
+    ]);
+});
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -72,6 +85,7 @@ Route::get('/salary-benchmark', [SalaryBenchmarkController::class, 'index'])->na
 Route::prefix('auth')->name('api.auth.')->group(function () {
     Route::post('/register/candidate', [UserAuthController::class, 'registerCandidate'])->name('register.candidate');
     Route::post('/register/company', [UserAuthController::class, 'registerCompany'])->name('register.company');
+    Route::post('/register/employee', [UserAuthController::class, 'registerEmployee'])->name('register.employee');
     Route::post('/login', [UserAuthController::class, 'login'])->name('login');
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -90,9 +104,41 @@ Route::prefix('admin')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
-    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/me', [AdminAuthController::class, 'me']);
+
+        // Company review & lifecycle management (permission: companies.review)
+        Route::middleware('permission:companies.review')->group(function () {
+            Route::get('/companies', [CompanyManagementController::class, 'index'])->name('admin.companies.index');
+            Route::get('/companies/{id}', [CompanyManagementController::class, 'show'])->name('admin.companies.show');
+            Route::post('/companies/{id}/approve', [CompanyManagementController::class, 'approve'])->name('admin.companies.approve');
+            Route::post('/companies/{id}/reject', [CompanyManagementController::class, 'reject'])->name('admin.companies.reject');
+        });
+
+        // Company suspension (permission: companies.suspend)
+        Route::middleware('permission:companies.suspend')->group(function () {
+            Route::post('/companies/{id}/suspend', [CompanyManagementController::class, 'suspend'])->name('admin.companies.suspend');
+        });
+
+        // User management (permission: users.manage)
+        Route::middleware('permission:users.manage')->group(function () {
+            Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+            Route::get('/users/{id}', [UserManagementController::class, 'show'])->name('admin.users.show');
+            Route::patch('/users/{id}/status', [UserManagementController::class, 'updateStatus'])->name('admin.users.status');
+        });
+
+        // Roles & role assignment (permission: roles.manage)
+        Route::middleware('permission:roles.manage')->group(function () {
+            Route::get('/roles', [UserManagementController::class, 'roles'])->name('admin.roles.index');
+            Route::post('/users/{id}/roles', [UserManagementController::class, 'assignRole'])->name('admin.users.roles.assign');
+            Route::delete('/users/{id}/roles/{roleId}', [UserManagementController::class, 'removeRole'])->name('admin.users.roles.remove');
+        });
+
+        // Audit logs (permission: audit.view)
+        Route::middleware('permission:audit.view')->group(function () {
+            Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('admin.audit-logs.index');
+        });
     });
 });
 
@@ -166,7 +212,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
     // 4. Company HR & Employer Portal
-    Route::prefix('company')->name('api.company.')->group(function () {
+    Route::prefix('company')->name('api.company.')->middleware('company.active')->group(function () {
+        // Employees & Interviewer Onboarding (Package 2)
+        Route::post('/join-requests', [CompanyEmployeeController::class, 'storeJoinRequest'])->name('employees.join');
+
+        Route::middleware('permission:employees.view')->group(function () {
+            Route::get('/employees', [CompanyEmployeeController::class, 'index'])->name('employees.index');
+            Route::get('/employees/{id}', [CompanyEmployeeController::class, 'show'])->name('employees.show');
+        });
+
+        Route::middleware('permission:employees.approve')->group(function () {
+            Route::post('/employees/{id}/approve', [CompanyEmployeeController::class, 'approve'])->name('employees.approve');
+            Route::post('/employees/{id}/reject', [CompanyEmployeeController::class, 'reject'])->name('employees.reject');
+        });
+
+        Route::middleware('permission:employees.manage')->group(function () {
+            Route::delete('/employees/{id}', [CompanyEmployeeController::class, 'destroy'])->name('employees.destroy');
+        });
+
         // Jobs Management
         Route::get('/jobs', [CompanyJobController::class, 'index'])->name('jobs.index');
         Route::post('/jobs', [CompanyJobController::class, 'store'])->name('jobs.store');
@@ -174,6 +237,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/jobs/{id}', [CompanyJobController::class, 'update'])->name('jobs.update');
         Route::patch('/jobs/{id}/status', [CompanyJobController::class, 'changeStatus'])->name('jobs.change-status');
         Route::delete('/jobs/{id}', [CompanyJobController::class, 'destroy'])->name('jobs.destroy');
+
+        // Job Interview Rounds CRUD (Package 3)
+        Route::middleware('permission:interviews.assign')->group(function () {
+            Route::get('/jobs/{job}/interview-rounds', [JobInterviewRoundController::class, 'index'])->name('jobs.interview-rounds.index');
+            Route::post('/jobs/{job}/interview-rounds', [JobInterviewRoundController::class, 'store'])->name('jobs.interview-rounds.store');
+            Route::get('/jobs/{job}/interview-rounds/{round}', [JobInterviewRoundController::class, 'show'])->name('jobs.interview-rounds.show');
+            Route::put('/jobs/{job}/interview-rounds/{round}', [JobInterviewRoundController::class, 'update'])->name('jobs.interview-rounds.update');
+            Route::delete('/jobs/{job}/interview-rounds/{round}', [JobInterviewRoundController::class, 'destroy'])->name('jobs.interview-rounds.destroy');
+        });
+
+        // Company Interviews Management (Package 3)
+        Route::post('/applications/{id}/interviews', [CompanyInterviewController::class, 'store'])->name('interviews.store');
+        Route::get('/interviews', [CompanyInterviewController::class, 'index'])->name('interviews.index');
+        Route::post('/interviews/{id}/cancel', [CompanyInterviewController::class, 'cancel'])->name('interviews.cancel');
 
         // Applications Management (ATS Pipeline)
         Route::get('/jobs/{jobId}/applications', [CompanyApplicationController::class, 'index'])->name('applications.index');

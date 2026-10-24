@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'account_status_id'  => $this->account_status_id,
             'account_status'     => $this->accountStatus?->name,
             'roles'              => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
+            'permissions'        => $this->whenLoaded('roles', fn () => $this->getAllPermissions()),
             'company'            => $company ? [
                 'id'     => $company->id,
                 'name'   => $company->name,

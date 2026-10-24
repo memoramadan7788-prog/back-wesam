@@ -43,6 +43,7 @@ class ApplicationPipelineTest extends TestCase
         $response = $this->actingAs($candidateUser)->postJson("/api/jobs/{$job->id}/apply", [
             'cover_note' => 'I am very interested in this software engineering position.',
             'cv_id'      => $cv->id,
+            'consent'    => true,
         ]);
 
         $response->assertStatus(201);
@@ -81,6 +82,7 @@ class ApplicationPipelineTest extends TestCase
 
         $response = $this->actingAs($candidateUser)->postJson("/api/jobs/{$job->id}/apply", [
             'cover_note' => 'Trying to apply again.',
+            'consent'    => true,
         ]);
 
         $response->assertStatus(409);
@@ -165,5 +167,51 @@ class ApplicationPipelineTest extends TestCase
             'to_status'      => 'shortlisted',
             'reason'         => 'Candidate looks very promising after initial screening.',
         ]);
+    }
+
+    public function test_application_stage_machine_rejects_non_sequential_hire_transition(): void
+    {
+        $companyOwner = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $companyOwner->id, 'status' => 'approved']);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+        $candidate = User::factory()->create();
+        $profile = CandidateProfile::create(['user_id' => $candidate->id]);
+        $application = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $profile->id,
+            'status'       => 'submitted',
+        ]);
+
+        $response = $this->actingAs($companyOwner)->patchJson("/api/company/applications/{$application->id}/status", [
+            'status' => 'hired',
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('message', "Cannot transition from 'submitted' to 'hired'.");
+        $response->assertJsonPath('allowed_transitions.0', 'screening');
+        $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'submitted']);
+    }
+
+    public function test_application_stage_machine_rejects_reopening_rejected_application(): void
+    {
+        $companyOwner = User::factory()->create();
+        $company = Company::factory()->create(['owner_user_id' => $companyOwner->id, 'status' => 'approved']);
+        $job = Job::factory()->create(['company_id' => $company->id]);
+        $candidate = User::factory()->create();
+        $profile = CandidateProfile::create(['user_id' => $candidate->id]);
+        $application = Application::create([
+            'job_id'       => $job->id,
+            'candidate_id' => $profile->id,
+            'status'       => 'rejected',
+        ]);
+
+        $response = $this->actingAs($companyOwner)->patchJson("/api/company/applications/{$application->id}/status", [
+            'status' => 'shortlisted',
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('message', "Cannot transition from 'rejected' to 'shortlisted'.");
+        $response->assertJsonPath('allowed_transitions', []);
+        $this->assertDatabaseHas('applications', ['id' => $application->id, 'status' => 'rejected']);
     }
 }

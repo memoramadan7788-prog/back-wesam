@@ -21,7 +21,14 @@ class CompanyApplicationController extends Controller
      */
     public function index(Request $request, int $jobId): AnonymousResourceCollection
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $job = Job::findOrFail($jobId);
+
+        if ($user->account_type !== 'admin' && (int) $job->company_id !== (int) $userCompanyId) {
+            abort(403, 'You do not have permission to access resources belonging to another company.');
+        }
 
         $status = $request->query('status');
 
@@ -39,6 +46,9 @@ class CompanyApplicationController extends Controller
      */
     public function show(Request $request, int $id): ApplicationDetailResource
     {
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
         $application = Application::with([
             'job.company',
             'candidateProfile.user',
@@ -46,21 +56,56 @@ class CompanyApplicationController extends Controller
             'applicationStatusHistories.changer',
         ])->findOrFail($id);
 
+        if ($user->account_type !== 'admin' && (int) $application->job->company_id !== (int) $userCompanyId) {
+            abort(403, 'You do not have permission to access resources belonging to another company.');
+        }
+
         return new ApplicationDetailResource($application);
     }
 
     /**
      * PATCH /api/company/applications/{id}/status
+     *
+     * Enforces a state machine for application stage transitions.
      */
     public function updateStatus(UpdateApplicationStageRequest $request, int $id): JsonResponse
     {
-        $application = Application::findOrFail($id);
+        $user = $request->user();
+        $userCompanyId = $user->resolveCompanyId();
+
+        $application = Application::with('job')->findOrFail($id);
+
+        if ($user->account_type !== 'admin' && (int) $application->job->company_id !== (int) $userCompanyId) {
+            return response()->json([
+                'message' => 'You do not have permission to access resources belonging to another company.',
+            ], 403);
+        }
         $validated = $request->validated();
 
-        DB::transaction(function () use ($application, $validated, $request) {
-            $oldStatus = $application->status;
-            $newStatus = $validated['status'];
+        $oldStatus = $application->status;
+        $newStatus = $validated['status'];
 
+        // Stage transition state machine
+        $allowedTransitions = [
+            'submitted'    => ['screening', 'shortlisted', 'rejected', 'withdrawn'],
+            'screening'    => ['shortlisted', 'rejected', 'withdrawn'],
+            'shortlisted'  => ['interviewing', 'rejected', 'withdrawn'],
+            'interviewing' => ['offered', 'rejected', 'withdrawn'],
+            'offered'      => ['hired', 'rejected', 'withdrawn'],
+            'rejected'     => [],
+            'hired'        => [],
+            'withdrawn'    => [],
+        ];
+
+        $allowed = $allowedTransitions[$oldStatus] ?? [];
+        if (! in_array($newStatus, $allowed)) {
+            return response()->json([
+                'message' => "Cannot transition from '{$oldStatus}' to '{$newStatus}'.",
+                'allowed_transitions' => $allowed,
+            ], 409);
+        }
+
+        DB::transaction(function () use ($application, $validated, $request, $oldStatus, $newStatus) {
             $application->update([
                 'status' => $newStatus,
             ]);

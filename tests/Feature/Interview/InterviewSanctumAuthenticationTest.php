@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Interview;
 
-use App\Models\Admin;
 use App\Models\Interview;
 use App\Models\InterviewBooking;
 use App\Models\InterviewEvaluation;
@@ -431,7 +430,8 @@ class InterviewSanctumAuthenticationTest extends TestCase
 
     public function test_admin_bearer_token_authenticates_via_sanctum_and_is_authorized_for_management(): void
     {
-        $admin = Admin::create([
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
             'name' => 'HR Director',
             'email' => 'hr.director@example.com',
             'password' => bcrypt('password123'),
@@ -495,7 +495,8 @@ class InterviewSanctumAuthenticationTest extends TestCase
 
     public function test_admin_bearer_token_cannot_schedule_reschedule_cancel_or_evaluate_interview(): void
     {
-        $admin = Admin::create([
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
             'name' => 'System Admin',
             'email' => 'admin.sys@example.com',
             'password' => bcrypt('password123'),

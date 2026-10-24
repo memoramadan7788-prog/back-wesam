@@ -549,7 +549,8 @@ class InterviewSchedulingTest extends TestCase
 
     public function test_admin_model_is_handled_safely_and_authorized_via_interview_policy(): void
     {
-        $admin = Admin::create([
+        $admin = User::factory()->create([
+            'account_type' => 'admin',
             'name' => 'System Administrator',
             'email' => 'admin@example.com',
             'password' => bcrypt('secret123'),

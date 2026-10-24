@@ -26,6 +26,53 @@ This document serves as the **official contract and blueprint for Frontend Engin
    - `403 Forbidden`: Permission denied or limit reached (e.g. maximum exam attempts, or company is pending approval) -> Show alert toast.
    - `409 Conflict`: Duplicate action (e.g. applying twice to the same job, or submitting an already submitted exam) -> Show warning dialog.
 
+### Canonical response-envelope map
+
+The table below documents the primary success key for every API endpoint family. Laravel resource collections and single resources use `data`; custom JSON responses use the named key shown below. Error responses use `message` and may include `errors` or `allowed_transitions`.
+
+| Endpoint(s) | Primary success key(s) |
+|---|---|
+| `GET /api` | `status`, `message` |
+| `GET /api/hello` | `message` |
+| `GET /api/jobs`, `GET /api/jobs/{job}` | `data` |
+| `GET /api/job-categories`, `GET /api/skills`, `GET /api/countries` | `data` |
+| `GET /api/salary-benchmark` | `market_summary`, `records` |
+| `POST /api/auth/register/candidate` | `user`, `access_token`, `token`, `token_type` |
+| `POST /api/auth/register/company` | `user`, `company`, `access_token`, `token`, `token_type` |
+| `POST /api/auth/register/employee` | `user`, `access_token`, `token` |
+| `POST /api/auth/login`, `POST /api/admin/login` | `access_token`, `token`, `token_type`; user login also returns `user`, admin login returns `admin` |
+| `GET /api/auth/me` | `data` |
+| `GET /api/admin/me` | `admin`, `user` |
+| `POST /api/auth/logout`, `POST /api/admin/logout` | `message` |
+| `GET|PUT /api/candidate/profile` | `data` |
+| Candidate CV, experience and education CRUD endpoints | `data` for resources/collections; delete endpoints return `message` |
+| `GET /api/candidate/applications`, `GET /api/candidate/applications/{id}` | `data` |
+| `POST /api/jobs/{jobId}/apply`, `PATCH /api/company/applications/{id}/status` | `application` |
+| `DELETE /api/candidate/applications/{id}/withdraw` | `message` |
+| Candidate interview list/detail/book/reschedule/cancel endpoints | `data` |
+| Candidate exam start | `attempt`, `questions` |
+| Candidate exam submit/result | `attempt_status`, `grading_status`, `total_score`, `attempt` and result fields |
+| `GET /api/candidate/offers`, `GET /api/offers/{id}` | `data` |
+| Candidate offer accept/reject | `offer` |
+| Interviewer availability and interview endpoints | `data` |
+| `POST /api/company/join-requests`, employee approve/reject/remove | `employee`; delete also returns `message` |
+| `GET /api/company/employees`, `GET /api/company/employees/{id}` | `data` |
+| `GET /api/company/jobs`, `GET /api/company/jobs/{id}` | `data` |
+| `POST /api/company/jobs`, `PUT /api/company/jobs/{id}`, job status change | `job` |
+| `DELETE /api/company/jobs/{id}` | `message` |
+| Interview-round CRUD endpoints | `data` and compatibility alias `round` on single/create/update responses |
+| `POST /api/company/applications/{id}/interviews`, `GET /api/company/interviews`, company interview cancel | `data` |
+| Company application list/detail | `data` |
+| Company exam create/question create | `exam` or `question` |
+| `POST /api/company/jobs/{jobId}/exams/{examId}/attach` | `job_id`, `exam_id`, `stage_order`, `message` |
+| `POST /api/company/offers` | `offer` |
+| Admin company review endpoints | `company` |
+| Admin user status/role endpoints | `user` or `message` |
+| `GET /api/admin/users`, `GET /api/admin/roles`, `GET /api/admin/audit-logs` | `data` |
+| Interview scheduling and evaluation endpoints under `/api/interviews` | `data` |
+
+For authentication, `access_token` is the canonical key. `token` remains as a backwards-compatible alias and has the same value.
+
 ---
 
 ## 2. Complete End-to-End System Workflow Map
@@ -126,11 +173,14 @@ flowchart TD
         "status": "approved"
       }
     },
-    "token": "1|abc123token..."
+    "access_token": "1|abc123token...",
+    "token": "1|abc123token...",
+    "token_type": "Bearer"
   }
   ```
   - If `account_type === 'candidate'` -> Redirect to `/jobs` or `/candidate/dashboard`.
   - If `account_type === 'company'` -> Redirect to `/company/jobs`.
+  - `access_token` is the canonical token key. `token` is retained as a compatibility alias with the same value.
   - Note: If `company.status === 'pending'`, show a banner: *"Your company account is currently under admin review."*
 
 #### Screen 4: Logout Button (In Navbar / Header)
@@ -364,15 +414,15 @@ flowchart TD
   - **Payload:**
     ```json
     {
-      "company_id": 1,
       "category_id": 1,
       "title": "Senior Laravel Developer",
       "description": "Detailed description of role responsibilities and qualifications...",
+      "location": "Riyadh, Saudi Arabia",
       "work_mode": "hybrid",
       "employment_type": "full_time",
       "salary_min": 25000,
       "salary_max": 40000,
-      "currency": "EGP",
+      "currency": "SAR",
       "salary_period": "month",
       "experience_years": 4,
       "department": "Engineering",
@@ -380,11 +430,12 @@ flowchart TD
       "deadline": "2026-12-31",
       "visibility": "public",
       "skills": [
-        { "id": 1, "is_required": true },
-        { "id": 2, "is_required": true }
+        { "skill_id": 1, "is_required": true },
+        { "skill_id": 2, "is_required": false }
       ]
     }
     ```
+  - `StoreJobRequest` accepts the canonical names `category_id`, `work_mode`, `salary_min`, `salary_max`, and `location`. The legacy aliases `job_category_id`, `workplace_type`, `min_salary`, `max_salary`, `city`, and `country_id` are rejected and must not be sent.
   - **Error Action (403 Forbidden):** If company status is `pending`, returns:
     `"Your company account is pending administrative approval. You cannot publish jobs until your account is approved."`
 - **Trigger / Button:** Click **"Close Job"**
@@ -405,6 +456,7 @@ flowchart TD
     }
     ```
   - **Success Action (200):** Move card to new column, update applicant timeline.
+  - **Allowed stage transitions:** `submitted -> screening|shortlisted|rejected|withdrawn`; `screening -> shortlisted|rejected|withdrawn`; `shortlisted -> interviewing|rejected|withdrawn`; `interviewing -> offered|rejected|withdrawn`; `offered -> hired|rejected|withdrawn`. `rejected`, `hired`, and `withdrawn` are terminal. Invalid transitions return `409` with `message` and `allowed_transitions`.
 
 #### Screen 18: Issue Job Offer Modal
 - **Trigger / Button:** Click **"Send Formal Offer"** (from Candidate Application modal)
@@ -488,16 +540,246 @@ flowchart TD
 
 ---
 
+### 3.10. Admin Portal Screens & Workflow
+
+#### Screen 22: Platform Admin Login (`/admin/login`)
+- **Trigger / Button:** Click **"Login as Administrator"**
+  - **Method & Route:** `POST /api/admin/login`
+  - **Payload:**
+    ```json
+    {
+      "email": "superadmin@example.com",
+      "password": "Password123!"
+    }
+    ```
+  - **Success Action (200):** Store `access_token` and `admin` info. Identity is unified with the `users` table (`account_type: 'admin'`).
+
+#### Screen 23: Company Review & Moderation (`/admin/companies`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/admin/companies?status=pending` (Permission: `companies.review`)
+  - **Filters Supported:** `status=pending|approved|rejected|suspended`, `search=name`
+- **Trigger / Button:** Click **"Approve Registration"**
+  - **Method & Route:** `POST /api/admin/companies/{id}/approve`
+  - **Success Action (200):** Company status changes to `approved`, stores `reviewed_by` and `reviewed_at`, and generates an audit log record `company.approved`.
+- **Trigger / Button:** Click **"Reject Registration"**
+  - **Method & Route:** `POST /api/admin/companies/{id}/reject`
+  - **Payload:**
+    ```json
+    {
+      "rejection_reason": "Commercial registration certificate is missing or invalid."
+    }
+    ```
+  - **Success Action (200):** Company status changes to `rejected`, stores `rejection_reason`, and generates an audit log record `company.rejected`.
+- **Trigger / Button:** Click **"Suspend Company"**
+  - **Method & Route:** `POST /api/admin/companies/{id}/suspend` (Permission: `companies.suspend`)
+  - **Payload:**
+    ```json
+    {
+      "reason": "Suspicious activity reported by candidates."
+    }
+    ```
+
+#### Screen 24: User & Role Management (`/admin/users`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/admin/users?account_type=&account_status_id=` (Permission: `users.manage`)
+  - **Single User Details:** `GET /api/admin/users/{id}`
+- **Trigger / Button:** Click **"Update Account Status"**
+  - **Method & Route:** `PATCH /api/admin/users/{id}/status`
+  - **Payload:**
+    ```json
+    {
+      "account_status_id": 3,
+      "reason": "Account suspended due to policy violation."
+    }
+    ```
+- **Trigger / Button:** Click **"Assign Role to User"**
+  - **Method & Route:** `POST /api/admin/users/{id}/roles` (Permission: `roles.manage`)
+  - **Payload:**
+    ```json
+    {
+      "role_id": 4,
+      "company_id": 1
+    }
+    ```
+- **Trigger / Button:** Click **"Remove Role"**
+  - **Method & Route:** `DELETE /api/admin/users/{id}/roles/{roleId}` (Permission: `roles.manage`)
+
+#### Screen 25: Audit Logs & System Trail (`/admin/audit-logs`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/admin/audit-logs` (Permission: `audit.view`)
+  - **Filters Supported:** `action=company.approved`, `auditable_type=Company`, `user_id=1`
+  - **Data Exposed:** `id`, `action`, `auditable_type`, `auditable_id`, `user` (name, email), `old_values`, `new_values`, `reason`, `ip_address`, `created_at`.
+
+---
+
+### 3.11. Company Employees & Interviewer Onboarding (Package 2)
+
+#### Screen 26: Company Join Request (`/company/join-request`)
+- **Target Audience:** Any authenticated user or candidate seeking to onboard as an employee/interviewer for a registered company.
+- **Rules Enforced:**
+  - One user = One company (a user cannot have multiple pending or approved employee affiliations; violations return `409 Conflict`).
+  - Company must have status `approved` (`403 Forbidden` if company is pending or suspended).
+- **Trigger / Button:** Click **"Submit Join Request"**
+  - **Method & Route:** `POST /api/company/join-requests`
+  - **Payload:**
+    ```json
+    {
+      "company_id": 1,
+      "requested_job_title": "Lead Technical Interviewer",
+      "requested_department": "Engineering"
+    }
+    ```
+  - **Success Response (201 Created):**
+    ```json
+    {
+      "message": "Join request submitted successfully. Awaiting company review.",
+      "employee": {
+        "id": 5,
+        "company_id": 1,
+        "company_name": "Acme Tech",
+        "requested_job_title": "Lead Technical Interviewer",
+        "requested_department": "Engineering",
+        "status": "pending",
+        "created_at": "2026-10-23T08:00:00.000000Z"
+      }
+    }
+    ```
+
+#### Screen 27: Company Employee Directory & Onboarding Pipeline (`/company/employees`)
+- **Permission Required:** `employees.view`
+- **Event: Page Load / Tab Switch**
+  - **Method & Route:** `GET /api/company/employees?status=pending` (or `status=approved`, `status=rejected`, `status=removed`)
+  - **Response (200 OK):**
+    ```json
+    {
+      "data": [
+        {
+          "id": 5,
+          "company_id": 1,
+          "user": {
+            "id": 12,
+            "name": "Alice Interviewer",
+            "email": "alice@example.com"
+          },
+          "requested_job_title": "Lead Technical Interviewer",
+          "requested_department": "Engineering",
+          "status": "pending",
+          "role": null,
+          "reviewer": null,
+          "reviewed_at": null,
+          "requested_at": "2026-10-23T08:00:00.000000Z"
+        }
+      ]
+    }
+    ```
+- **Trigger / Button:** Click **"Approve Employee & Assign Role"**
+  - **Permission Required:** `employees.approve`
+  - **Method & Route:** `POST /api/company/employees/{id}/approve`
+  - **Payload:**
+    ```json
+    {
+      "role_id": 5
+    }
+    ```
+  - **Backend Action:**
+    1. Validates `role_id` exists and its `scope === 'company'` (e.g. `hr`, `interviewer`, `employee`). Assigning platform roles like `super_admin` returns `422 Unprocessable Content`.
+    2. Sets `company_employees.status = 'approved'`, `joined_at = now()`, `reviewed_by = auth()->id()`, and `reviewed_at = now()`.
+    3. Attaches role in `user_roles` pivot with `company_id`.
+    4. Automatically generates a system notification in `notifications` table (`type: 'company.join_approved'`).
+    5. Records action `employee.approved` in `audit_logs`.
+- **Trigger / Button:** Click **"Reject Request"**
+  - **Permission Required:** `employees.approve`
+  - **Method & Route:** `POST /api/company/employees/{id}/reject`
+  - **Payload:**
+    ```json
+    {
+      "rejection_reason": "Department headcount is currently full for this quarter."
+    }
+    ```
+  - **Backend Action:** Sets `status = 'rejected'`, records `rejection_reason`, updates `reviewed_by`/`reviewed_at`, and writes to `audit_logs`.
+- **Trigger / Button:** Click **"Remove Employee"**
+  - **Permission Required:** `employees.manage`
+  - **Method & Route:** `DELETE /api/company/employees/{id}`
+  - **Backend Action:**
+    1. Guards against removing the company owner (`403 Forbidden`).
+    2. Guards against company admins removing their own account (`403 Forbidden`).
+    3. Sets `status = 'removed'` and `left_at = now()`.
+    4. Detaches the user's role associated with this company in `user_roles`.
+    5. Records action `employee.removed` in `audit_logs`.
+
+---
+
+### 3.12. Package 3: Company Interview Assignment & Rounds
+
+#### Employee registration
+- **Method & Route:** `POST /api/auth/register/employee`
+- **Payload:** `{ "name": "Sara HR", "email": "sara@example.com", "password": "Password123!", "password_confirmation": "Password123!" }`
+- **Success (201):** Returns `user`, `access_token`, `token`, and `token_type`. The employee then submits `POST /api/company/join-requests` and waits for approval.
+
+#### Interview-round CRUD
+- **Create:** `POST /api/company/jobs/{jobId}/interview-rounds`
+- **List:** `GET /api/company/jobs/{jobId}/interview-rounds`
+- **Details:** `GET /api/company/jobs/{jobId}/interview-rounds/{roundId}`
+- **Update:** `PUT /api/company/jobs/{jobId}/interview-rounds/{roundId}`
+- **Delete:** `DELETE /api/company/jobs/{jobId}/interview-rounds/{roundId}`
+- **Payload:** `{ "round_no": 1, "interview_type": "online", "duration_min": 45 }`
+- Create/update success responses expose the resource under `data` and compatibility alias `round`; list responses expose `data`.
+
+#### Company interview assignment
+- **Create:** `POST /api/company/applications/{applicationId}/interviews`
+- **Payload:**
+  ```json
+  {
+    "round_no": 1,
+    "interview_type": "online",
+    "interviewer_id": 42,
+    "instructions": "Prepare a system design discussion.",
+    "location": null
+  }
+  ```
+- **List:** `GET /api/company/interviews?status=pending&job_id=10`
+- **Cancel:** `POST /api/company/interviews/{interviewId}/cancel` with optional `{ "reason": "Schedule changed." }`
+- Successful create/list/cancel responses use `data`. Creating an interview requires the application to belong to the company, the round to exist for the job, and the interviewer to be an approved company employee. Duplicate active rounds return `409`; canceling an already cancelled interview returns `409`.
+
+#### Exam timeout and attach behavior
+- `POST /api/company/jobs/{jobId}/exams/{examId}/attach` accepts optional `stage_order`. If omitted, it uses the highest existing order for that job plus `1`, or `1` for the first exam.
+- Submitting an exam after `time_limit_min` returns `409`, sets the attempt status to `expired`, and returns `status: "expired"` with a clear `message`.
+
+### Route coverage audit: endpoints often missed in screen descriptions
+
+These routes are part of the live API contract and must be included in frontend clients:
+
+| Method | Route | Primary success key |
+|---|---|---|
+| `GET` | `/api/` | `status`, `message` |
+| `GET` | `/api/user` | authenticated user resource |
+| `POST` | `/api/admin/forgot-password` | `message` |
+| `POST` | `/api/admin/reset-password` | `message` |
+| `GET` | `/api/admin/companies/{id}` | `data` |
+| `GET`/`POST`/`DELETE` | `/api/candidate/experiences`, `/api/candidate/experiences/{id}` | `data` or `message` |
+| `GET`/`POST`/`DELETE` | `/api/candidate/educations`, `/api/candidate/educations/{id}` | `data` or `message` |
+| `GET` | `/api/candidate/interviews/{id}` | `data` |
+| `GET`/`POST`/`PUT`/`PATCH`/`DELETE` | `/api/interviewer/availabilities` and `/api/interviewer/availabilities/{id}` | `data` or `message` |
+| `GET` | `/api/interviewer/interviews` | `data` |
+| `GET` | `/api/company/applications/{id}` | `data` |
+| `POST` | `/api/interviews` | `data` |
+| `POST` | `/api/interviews/{id}/reschedule`, `/api/interviews/{id}/cancel` | `data` |
+| `GET`/`POST` | `/api/interviews/{id}/evaluations` | `data` |
+
+The route audit treats `GET` plus its implicit `HEAD` method as one documented endpoint and normalizes parameter names such as `{id}` and `{jobId}` by position.
+
+---
+
 ## 4. Frontend State & Quick Reference Checklist
 
 | User Journey | Key State To Store In Client Store | Primary Route |
 | :--- | :--- | :--- |
-| **Auth** | `token`, `user`, `user.account_type`, `user.company` | `POST /api/auth/login` |
+| **Auth** | `access_token` (canonical), `token` (alias), `user`, `user.account_type`, `user.company` | `POST /api/auth/login` |
 | **Lookups** | `categories`, `skills`, `countries` | `GET /api/job-categories`, `/skills`, `/countries` |
 | **Candidate Profile** | `profile`, `profile.cvs`, `profile.experiences` | `GET /api/candidate/profile` |
 | **Job Search** | `jobs`, `pagination`, `filters` | `GET /api/jobs` |
 | **Job Apply** | `selectedCvId`, `coverNote`, `consent` | `POST /api/jobs/{id}/apply` |
-| **Active Exam** | `attemptId`, `remainingSeconds`, `cameraConsent` | `POST /api/candidate/exams/{id}/start` |
+| **Active Exam** | `attemptId`, `remainingSeconds`, `cameraConsent` | `POST /api/candidate/exams/{examId}/applications/{applicationId}/start` |
 | **ATS Kanban** | `applicationsByStatus: { submitted: [], ... }` | `GET /api/company/jobs/{id}/applications` |
 | **Offer** | `offerDetails`, `status: 'sent'` | `GET /api/offers/{id}` |
 
@@ -508,3 +790,41 @@ The entire frontend team can test every single button and payload live right now
 1. Start the server: `php artisan serve`
 2. Open browser: `http://127.0.0.1:8000/docs/api`
 3. Click any endpoint -> Select **"Send API Request"** to see the real response immediately!
+
+---
+
+## 6. Multi-Tenancy & Platform Admin Context (`resolveCompanyId`)
+
+In this architecture, regular company staff (`company_admin`, `hr`, `interviewer`, `employee`) have their tenant scope (`company_id`) implicitly resolved from their active affiliation in `company_employees` or `user_roles`. They can never interact with or modify jobs, applications, or employee rosters belonging to another company (enforced with `403 Forbidden`).
+
+### Admin Behavior:
+Platform Administrators (`account_type = 'admin'`) have global oversight and do NOT have a static single company affiliation.
+1. When a platform admin interacts with company-scoped endpoints (such as `POST /api/company/jobs`, `GET /api/company/employees`, etc.), they **MUST** supply an explicit company context using either:
+   - Query parameter: `?company_id=1`
+   - Request body: `{ "company_id": 1, ... }`
+   - Custom HTTP header: `X-Company-Id: 1`
+2. If an administrator attempts to perform a company-scoped operation without an explicit target company identifier, the request fails with:
+   - **Status Code:** `422 Unprocessable Content`
+   - **Message:** `"For platform administrators, an explicit company_id parameter or X-Company-Id header is required to perform company-scoped operations."`
+
+---
+
+## 7. Exporting OpenAPI Specification (`api.json`)
+
+To regenerate or export the complete OpenAPI `api.json` contract file without requiring an active MySQL database connection, use the SQLite in-memory override command:
+
+### Windows Command Prompt (cmd.exe):
+```cmd
+set DB_CONNECTION=sqlite&& set DB_DATABASE=:memory:&& php artisan scramble:export
+```
+
+### Windows PowerShell:
+```powershell
+$env:DB_CONNECTION='sqlite'; $env:DB_DATABASE=':memory:'; php artisan scramble:export
+```
+
+### Linux / macOS (bash / zsh):
+```bash
+DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan scramble:export
+```
+This safely runs Scramble in headless mode, analyzes all FormRequests, Controllers, and Resources, and outputs the full schema directly to `api.json` in the root project directory.

@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Schema;
 
 class InterviewPolicy
 {
+    protected function isPlatformAdmin(Authenticatable $user): bool
+    {
+        return ($user instanceof Admin) || (isset($user->account_type) && $user->account_type === 'admin');
+    }
+
     /**
      * Determine whether a candidate can view their interview.
      * Enforces candidate ownership via Query Builder traversal:
@@ -20,7 +25,7 @@ class InterviewPolicy
      */
     public function viewCandidate(Authenticatable $user, Interview $interview): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Admins must view interviews through the administrative portal.');
         }
 
@@ -47,7 +52,7 @@ class InterviewPolicy
      */
     public function viewInterviewer(Authenticatable $user, Interview $interview): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::allow();
         }
 
@@ -70,7 +75,7 @@ class InterviewPolicy
      */
     public function schedule(Authenticatable $user): Response
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators are not authorized to directly schedule operational interviews. This action must be performed by authorized company recruitment personnel.');
         }
 
@@ -96,7 +101,7 @@ class InterviewPolicy
             return Response::deny('This interview cannot be rescheduled in its current status.');
         }
 
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators are not authorized to reschedule operational interview bookings.');
         }
 
@@ -127,7 +132,7 @@ class InterviewPolicy
             return Response::deny('This interview cannot be cancelled in its current status.');
         }
 
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators are not authorized to cancel operational interview bookings. Cancellations must be performed by an assigned interviewer or company HR.');
         }
 
@@ -156,7 +161,7 @@ class InterviewPolicy
             return Response::deny('Cancelled interviews cannot be evaluated.');
         }
 
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::deny('Platform administrators cannot submit interview evaluations.');
         }
 
@@ -191,7 +196,7 @@ class InterviewPolicy
             return Response::deny('Candidates cannot publish evaluations.');
         }
 
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return Response::allow();
         }
 
@@ -215,7 +220,7 @@ class InterviewPolicy
      */
     public function hasRecruitmentPrivilege(Authenticatable $user): bool
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return false;
         }
 
@@ -254,7 +259,7 @@ class InterviewPolicy
      */
     protected function hasAdminPrivilege(Authenticatable $user): bool
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return true;
         }
 
@@ -266,7 +271,7 @@ class InterviewPolicy
      */
     protected function isCandidate(Authenticatable $user): bool
     {
-        if ($user instanceof Admin) {
+        if ($this->isPlatformAdmin($user)) {
             return false;
         }
 
