@@ -18,26 +18,113 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('interview_bookings', function (Blueprint $table) {
-            try {
-                $table->dropUnique(['availability_id']);
-            } catch (\Exception $e) {
-                // Index may not exist in test/SQLite environments
-            }
+        // MySQL cannot drop an index while a foreign key is using it as the
+        // supporting index. Drop and recreate the FK around the index change.
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropForeign('interview_bookings_availability_id_foreign');
+            });
+        });
 
-            try {
-                $table->dropUnique(['interviewer_id', 'start_at']);
-            } catch (\Exception $e) {
-                // Index may not exist in test/SQLite environments
-            }
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropForeign('interview_bookings_interviewer_id_foreign');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropUnique('interview_bookings_availability_id_unique');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropUnique('interview_bookings_interviewer_id_start_at_unique');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->index('availability_id', 'interview_bookings_availability_id_index');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->foreign('availability_id', 'interview_bookings_availability_id_foreign')
+                    ->references('id')
+                    ->on('interviewer_availability');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->foreign('interviewer_id', 'interview_bookings_interviewer_id_foreign')
+                    ->references('id')
+                    ->on('users');
+            });
         });
     }
 
     public function down(): void
     {
-        Schema::table('interview_bookings', function (Blueprint $table) {
-            $table->unique('availability_id');
-            $table->unique(['interviewer_id', 'start_at']);
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropForeign('interview_bookings_availability_id_foreign');
+            });
         });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropForeign('interview_bookings_interviewer_id_foreign');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->dropIndex('interview_bookings_availability_id_index');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->unique('availability_id', 'interview_bookings_availability_id_unique');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->unique(
+                    ['interviewer_id', 'start_at'],
+                    'interview_bookings_interviewer_id_start_at_unique'
+                );
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->foreign('availability_id', 'interview_bookings_availability_id_foreign')
+                    ->references('id')
+                    ->on('interviewer_availability');
+            });
+        });
+
+        $this->attempt(function () {
+            Schema::table('interview_bookings', function (Blueprint $table) {
+                $table->foreign('interviewer_id', 'interview_bookings_interviewer_id_foreign')
+                    ->references('id')
+                    ->on('users');
+            });
+        });
+    }
+
+    private function attempt(\Closure $operation): void
+    {
+        try {
+            $operation();
+        } catch (\Throwable) {
+            // Keep the migration retryable after a partial DDL execution.
+        }
     }
 };
