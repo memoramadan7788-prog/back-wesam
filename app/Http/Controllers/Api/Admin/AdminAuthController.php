@@ -9,16 +9,10 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Validator;
 
-/**
- * Admin Authentication Controller.
- *
- * Phase 0.5: Consolidated to use the `users` table with account_type='admin'
- * instead of the separate `admins` table.
- */
-class AuthController extends Controller
+class AdminAuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
@@ -102,7 +96,7 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // Use default password broker (users table) instead of admins broker
+        // Use the default password broker, which stores users in the users table.
         $status = Password::sendResetLink(
             $request->only('email')
         );
@@ -144,7 +138,7 @@ class AuthController extends Controller
                     'password' => Hash::make($password),
                 ])->save();
 
-                // Revoke all existing Sanctum tokens.
+                // Revoke all existing Sanctum tokens after a password reset.
                 $user->tokens()->delete();
             }
         );

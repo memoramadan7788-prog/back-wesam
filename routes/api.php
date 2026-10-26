@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\Admin\AuditLogController;
-use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\CompanyManagementController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Application\CandidateApplicationController;
