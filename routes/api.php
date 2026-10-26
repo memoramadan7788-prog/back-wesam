@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\Offer\OfferController;
 use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,6 +108,9 @@ Route::prefix('admin')->group(function () {
     Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/me', [AdminAuthController::class, 'me']);
+
+        // Platform KPIs (any admin account)
+        Route::middleware('admin')->get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
         // Company review & lifecycle management (permission: companies.review)
         Route::middleware('permission:companies.review')->group(function () {
