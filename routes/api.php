@@ -110,7 +110,7 @@ Route::prefix('admin')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/me', [AdminAuthController::class, 'me']);
 

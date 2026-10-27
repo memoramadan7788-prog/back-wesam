@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\Admin;
 use App\Models\Company;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class AdminCompanyService
     public function list(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         return Company::query()
-            ->with(['owner', 'reviewer'])
+            ->with(['owner', 'reviewer', 'reviewerAdmin'])
             ->withCount(['jobs', 'companyEmployees'])
             ->when(!empty($filters['status']), fn ($q) => $q->where('status', $filters['status']))
             ->when(!empty($filters['search']), function ($q, $search) {
@@ -32,13 +33,13 @@ class AdminCompanyService
      * Approve a company registration.
      * Allowed transitions: pending -> approved, suspended -> approved.
      */
-    public function approve(Company $company, int $reviewerId): Company
+    public function approve(Company $company, int $reviewerId, ?int $reviewerAdminId = null): Company
     {
         if (! in_array($company->status, ['pending', 'suspended'], true)) {
             abort(409, "Cannot approve company with status '{$company->status}'. Allowed transitions: pending -> approved, suspended -> approved.");
         }
 
-        return DB::transaction(function () use ($company, $reviewerId) {
+        return DB::transaction(function () use ($company, $reviewerId, $reviewerAdminId) {
             $oldValues = [
                 'status'      => $company->status,
                 'reviewed_by' => $company->reviewed_by,
@@ -47,7 +48,8 @@ class AdminCompanyService
 
             $company->update([
                 'status'           => 'approved',
-                'reviewed_by'      => $reviewerId,
+                'reviewed_by'      => $reviewerAdminId ? null : $reviewerId,
+                'reviewed_by_admin_id' => $reviewerAdminId,
                 'reviewed_at'      => now(),
                 'rejection_reason' => null,
             ]);
@@ -64,10 +66,11 @@ class AdminCompanyService
                 userId: $reviewerId,
                 oldValues: $oldValues,
                 newValues: $newValues,
-                reason: 'Company registration approved by administrator.'
+                reason: 'Company registration approved by administrator.',
+                adminId: $reviewerAdminId
             );
 
-            return $company->fresh(['owner', 'reviewer']);
+            return $company->fresh(['owner', 'reviewer', 'reviewerAdmin']);
         });
     }
 
@@ -75,13 +78,13 @@ class AdminCompanyService
      * Reject a company registration.
      * Allowed transitions: pending -> rejected.
      */
-    public function reject(Company $company, int $reviewerId, string $reason): Company
+    public function reject(Company $company, int $reviewerId, string $reason, ?int $reviewerAdminId = null): Company
     {
         if ($company->status !== 'pending') {
             abort(409, "Cannot reject company with status '{$company->status}'. Only companies with 'pending' status can be rejected.");
         }
 
-        return DB::transaction(function () use ($company, $reviewerId, $reason) {
+        return DB::transaction(function () use ($company, $reviewerId, $reason, $reviewerAdminId) {
             $oldValues = [
                 'status'           => $company->status,
                 'reviewed_by'      => $company->reviewed_by,
@@ -91,7 +94,8 @@ class AdminCompanyService
 
             $company->update([
                 'status'           => 'rejected',
-                'reviewed_by'      => $reviewerId,
+                'reviewed_by'      => $reviewerAdminId ? null : $reviewerId,
+                'reviewed_by_admin_id' => $reviewerAdminId,
                 'reviewed_at'      => now(),
                 'rejection_reason' => $reason,
             ]);
@@ -109,10 +113,11 @@ class AdminCompanyService
                 userId: $reviewerId,
                 oldValues: $oldValues,
                 newValues: $newValues,
-                reason: $reason
+                reason: $reason,
+                adminId: $reviewerAdminId
             );
 
-            return $company->fresh(['owner', 'reviewer']);
+            return $company->fresh(['owner', 'reviewer', 'reviewerAdmin']);
         });
     }
 
@@ -120,13 +125,13 @@ class AdminCompanyService
      * Suspend a company account.
      * Allowed transitions: approved -> suspended.
      */
-    public function suspend(Company $company, int $reviewerId, ?string $reason = null): Company
+    public function suspend(Company $company, int $reviewerId, ?string $reason = null, ?int $reviewerAdminId = null): Company
     {
         if ($company->status !== 'approved') {
             abort(409, "Cannot suspend company with status '{$company->status}'. Only companies with 'approved' status can be suspended.");
         }
 
-        return DB::transaction(function () use ($company, $reviewerId, $reason) {
+        return DB::transaction(function () use ($company, $reviewerId, $reason, $reviewerAdminId) {
             $oldValues = [
                 'status'      => $company->status,
                 'reviewed_by' => $company->reviewed_by,
@@ -135,7 +140,8 @@ class AdminCompanyService
 
             $company->update([
                 'status'      => 'suspended',
-                'reviewed_by' => $reviewerId,
+                'reviewed_by' => $reviewerAdminId ? null : $reviewerId,
+                'reviewed_by_admin_id' => $reviewerAdminId,
                 'reviewed_at' => now(),
             ]);
 
@@ -151,10 +157,11 @@ class AdminCompanyService
                 userId: $reviewerId,
                 oldValues: $oldValues,
                 newValues: $newValues,
-                reason: $reason ?? 'Company suspended by administrator.'
+                reason: $reason ?? 'Company suspended by administrator.',
+                adminId: $reviewerAdminId
             );
 
-            return $company->fresh(['owner', 'reviewer']);
+            return $company->fresh(['owner', 'reviewer', 'reviewerAdmin']);
         });
     }
 }

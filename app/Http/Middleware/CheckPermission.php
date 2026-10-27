@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Admin;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,7 +21,19 @@ class CheckPermission
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        // Admin users (account_type = admin) bypass permission checks
+        if ($user instanceof Admin) {
+            foreach ($permissions as $permission) {
+                if ($user->hasPermission($permission)) {
+                    return $next($request);
+                }
+            }
+
+            return response()->json([
+                'message' => 'You do not have the required admin permission to perform this action.',
+            ], 403);
+        }
+
+        // Legacy User admins remain supported while existing data is migrated.
         if ($user->account_type === 'admin') {
             return $next($request);
         }

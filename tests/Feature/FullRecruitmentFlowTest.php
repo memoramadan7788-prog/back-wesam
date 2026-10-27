@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AccountStatus;
+use App\Models\Admin;
+use App\Models\AdminRole;
 use App\Models\Application;
 use App\Models\CandidateProfile;
 use App\Models\Company;
@@ -25,11 +27,14 @@ use App\Models\Skill;
 use App\Models\User;
 use Carbon\Carbon;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\AdminPermissionSeeder;
+use Database\Seeders\AdminRoleSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Services\GoogleAuthenticatorService;
 use Tests\TestCase;
 
 class FullRecruitmentFlowTest extends TestCase
@@ -37,6 +42,7 @@ class FullRecruitmentFlowTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+    protected Admin $platformAdmin;
     protected Role $companyAdminRole;
     protected Role $hrRole;
     protected Role $interviewerRole;
@@ -52,6 +58,8 @@ class FullRecruitmentFlowTest extends TestCase
 
         $this->seed(PermissionSeeder::class);
         $this->seed(RoleSeeder::class);
+        $this->seed(AdminPermissionSeeder::class);
+        $this->seed(AdminRoleSeeder::class);
 
         // System Admin
         $this->adminUser = User::factory()->create([
@@ -60,6 +68,20 @@ class FullRecruitmentFlowTest extends TestCase
             'email'        => 'superadmin@example.com',
             'password'     => Hash::make('Password123!'),
         ]);
+
+        $this->platformAdmin = Admin::create([
+            'name' => 'Platform Super Admin',
+            'email' => 'superadmin@example.com',
+            'password' => Hash::make('Password123!'),
+            'account_status_id' => AccountStatus::ACTIVE,
+            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
+            'two_factor_confirmed_at' => now(),
+        ]);
+        $this->platformAdmin->roles()->attach(AdminRole::where('name', 'super_admin')->firstOrFail()->id, [
+            'assigned_at' => now(),
+        ]);
+        $superAdminRole = Role::where('name', 'super_admin')->firstOrFail();
+        $this->adminUser->roles()->attach($superAdminRole->id, ['assigned_at' => now()]);
 
         $this->companyAdminRole = Role::where('name', 'company_admin')->firstOrFail();
         $this->hrRole           = Role::where('name', 'hr')->firstOrFail();
@@ -83,6 +105,7 @@ class FullRecruitmentFlowTest extends TestCase
         $adminLoginResp = $this->postJson('/api/admin/login', [
             'email'    => 'superadmin@example.com',
             'password' => 'Password123!',
+            'otp'      => app(GoogleAuthenticatorService::class)->codeForTesting($this->platformAdmin->two_factor_secret),
         ]);
         $adminLoginResp->assertStatus(200);
         // Note: Admin login returns 'access_token', whereas user login returns 'token'

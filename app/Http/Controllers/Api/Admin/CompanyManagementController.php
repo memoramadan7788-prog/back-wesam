@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RejectCompanyRequest;
 use App\Http\Resources\Admin\AdminCompanyResource;
 use App\Models\Company;
+use App\Models\Admin;
 use App\Services\AdminCompanyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class CompanyManagementController extends Controller
      */
     public function show(int $id): AdminCompanyResource
     {
-        $company = Company::with(['owner', 'reviewer'])->withCount(['jobs', 'companyEmployees'])->findOrFail($id);
+        $company = Company::with(['owner', 'reviewer', 'reviewerAdmin'])->withCount(['jobs', 'companyEmployees'])->findOrFail($id);
 
         return new AdminCompanyResource($company);
     }
@@ -46,7 +47,12 @@ class CompanyManagementController extends Controller
     public function approve(Request $request, int $id): JsonResponse
     {
         $company = Company::findOrFail($id);
-        $updated = $this->companyService->approve($company, $request->user()->id);
+        $actor = $request->user();
+        $updated = $this->companyService->approve(
+            $company,
+            $actor instanceof Admin ? 0 : $actor->id,
+            $actor instanceof Admin ? $actor->id : null
+        );
 
         return response()->json([
             'message' => 'Company registration approved successfully.',
@@ -61,7 +67,13 @@ class CompanyManagementController extends Controller
     {
         $company = Company::findOrFail($id);
         $reason = $request->validated()['rejection_reason'];
-        $updated = $this->companyService->reject($company, $request->user()->id, $reason);
+        $actor = $request->user();
+        $updated = $this->companyService->reject(
+            $company,
+            $actor instanceof Admin ? 0 : $actor->id,
+            $reason,
+            $actor instanceof Admin ? $actor->id : null
+        );
 
         return response()->json([
             'message' => 'Company registration rejected.',
@@ -76,7 +88,13 @@ class CompanyManagementController extends Controller
     {
         $company = Company::findOrFail($id);
         $reason = $request->input('reason');
-        $updated = $this->companyService->suspend($company, $request->user()->id, $reason);
+        $actor = $request->user();
+        $updated = $this->companyService->suspend(
+            $company,
+            $actor instanceof Admin ? 0 : $actor->id,
+            $reason,
+            $actor instanceof Admin ? $actor->id : null
+        );
 
         return response()->json([
             'message' => 'Company has been suspended.',

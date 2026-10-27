@@ -5,6 +5,7 @@ namespace Tests\Feature\Setup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Admin;
 use Tests\TestCase;
 
 class DatabaseSeederTest extends TestCase
@@ -16,14 +17,16 @@ class DatabaseSeederTest extends TestCase
         $exitCode = Artisan::call('db:seed', ['--force' => true]);
 
         $this->assertSame(0, $exitCode);
-        $this->assertFalse(Schema::hasTable('admins'));
-        $this->assertDatabaseHas('users', [
+        $this->assertTrue(Schema::hasTable('admins'));
+        $this->assertDatabaseHas('admins', [
             'email' => 'admin@example.com',
-            'account_type' => 'admin',
         ]);
         $this->assertDatabaseHas('users', ['email' => 'company@example.com']);
         $this->assertDatabaseHas('users', ['email' => 'candidate@example.com']);
-        $this->assertDatabaseHas('roles', ['name' => 'super_admin']);
+        $this->assertDatabaseHas('admin_roles', ['name' => 'super_admin']);
+        $this->assertDatabaseHas('admin_role_assignments', [
+            'admin_id' => Admin::where('email', 'admin@example.com')->value('id'),
+        ]);
         $this->assertDatabaseHas('jobs', ['title' => 'Senior Laravel & Cloud Architect']);
     }
 }

@@ -159,7 +159,7 @@ class AdminPortalTest extends TestCase
         $responseApprove->assertStatus(403);
     }
 
-    public function test_user_with_permission_can_review_companies(): void
+    public function test_non_admin_user_with_platform_permission_cannot_review_companies(): void
     {
         $perm = Permission::create(['key' => 'companies.review', 'description' => 'Review companies']);
         $role = Role::create(['name' => 'company_reviewer', 'scope' => 'platform', 'description' => 'Reviewer']);
@@ -171,7 +171,7 @@ class AdminPortalTest extends TestCase
         Company::factory()->create(['status' => 'pending']);
 
         $response = $this->actingAs($reviewerUser)->getJson('/api/admin/companies');
-        $response->assertStatus(200);
+        $response->assertStatus(403);
     }
 
     public function test_admin_can_list_and_show_users(): void

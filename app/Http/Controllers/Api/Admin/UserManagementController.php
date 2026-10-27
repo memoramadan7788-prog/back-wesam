@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\AdminUserResource;
 use App\Http\Resources\Admin\RoleResource;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Admin;
 use App\Services\AdminUserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -50,12 +51,14 @@ class UserManagementController extends Controller
     {
         $user = User::findOrFail($id);
         $validated = $request->validated();
+        $actor = $request->user();
 
         $updated = $this->userService->updateStatus(
             user: $user,
             newStatusId: $validated['account_status_id'],
-            adminId: $request->user()->id,
-            reason: $validated['reason'] ?? null
+            adminId: $actor instanceof Admin ? null : $actor->id,
+            reason: $validated['reason'] ?? null,
+            adminActorId: $actor instanceof Admin ? $actor->id : null
         );
 
         return response()->json([
@@ -71,12 +74,14 @@ class UserManagementController extends Controller
     {
         $user = User::findOrFail($id);
         $validated = $request->validated();
+        $actor = $request->user();
 
         $updated = $this->userService->assignRole(
             user: $user,
             roleId: $validated['role_id'],
-            adminId: $request->user()->id,
-            companyId: $validated['company_id'] ?? null
+            adminId: $actor instanceof Admin ? null : $actor->id,
+            companyId: $validated['company_id'] ?? null,
+            adminActorId: $actor instanceof Admin ? $actor->id : null
         );
 
         return response()->json([
@@ -91,11 +96,13 @@ class UserManagementController extends Controller
     public function removeRole(Request $request, int $id, int $roleId): JsonResponse
     {
         $user = User::findOrFail($id);
+        $actor = $request->user();
 
         $updated = $this->userService->removeRole(
             user: $user,
             roleId: $roleId,
-            adminId: $request->user()->id
+            adminId: $actor instanceof Admin ? null : $actor->id,
+            adminActorId: $actor instanceof Admin ? $actor->id : null
         );
 
         return response()->json([
