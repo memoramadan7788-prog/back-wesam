@@ -95,6 +95,11 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     });
 });
 
+Route::prefix('auth')->group(function () {
+    Route::post('/forgot-password', [UserAuthController::class, 'forgotPassword'])->name('password.email');
+    Route::post('/reset-password', [UserAuthController::class, 'resetPassword'])->name('password.reset');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Admin Authentication Routes
@@ -155,9 +160,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 1. Candidate Portal
     Route::prefix('candidate')->name('api.candidate.')->group(function () {
-        // Profile
+        // Profile & Password
         Route::get('/profile', [CandidateProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [CandidateProfileController::class, 'update'])->name('profile.update');
+        Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
+
+        // Notifications
+        Route::get('/notifications', [CandidateProfileController::class, 'notifications'])->name('notifications.index');
+        Route::patch('/notifications/read-all', [CandidateProfileController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
+        Route::patch('/notifications/{id}/read', [CandidateProfileController::class, 'markNotificationAsRead'])->name('notifications.read');
 
         // CV Management
         Route::get('/cvs', [CandidateCvController::class, 'index'])->name('cvs.index');
