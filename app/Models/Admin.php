@@ -64,6 +64,14 @@ class Admin extends Authenticatable
         return true;
     }
 
+    public function isSuperAdmin(): bool
+    {
+        return $this->roles()
+            ->where('admin_roles.name', 'super_admin')
+            ->where('admin_roles.scope', 'platform')
+            ->exists();
+    }
+
     public function isActive(): bool
     {
         return $this->account_status_id === AccountStatus::ACTIVE;

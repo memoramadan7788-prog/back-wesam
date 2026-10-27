@@ -6,7 +6,7 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **101 API route entries** and **86 OpenAPI paths**, backed by **218 passing tests with 1154 assertions**. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **120 API route entries** and **100 OpenAPI paths**, backed by **229 passing tests with 1283 assertions**. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
@@ -79,7 +79,7 @@ Platform administrators are isolated from the user RBAC tables. Their account, r
 
 ## 3. Currently Implemented APIs & Components (100% Operational)
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 101 API route entries and is backed by the full feature test suite.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 120 API route entries and is backed by the full feature test suite.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -92,7 +92,7 @@ The module inventory below documents the main API flows. The source of truth is 
 | `GET` | `/api/jobs/{job}` | `JobController@show` | `throttle:60,1` | Retrieve single published job details including company, category, and required skills. |
 
 ### 3.2. Admin Authentication Module
-- **Controller:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php)
+- **Controllers:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php), [`App\Http\Controllers\Api\Admin\AdminAnalyticsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAnalyticsController.php)
 - **Model:** [`App\Models\Admin`](file:///c:/Projects/hr_managment_system/app/Models/Admin.php)
 - **Middleware:** [`App\Http\Middleware\EnsureAdmin`](file:///c:/Projects/hr_managment_system/app/Http/Middleware/EnsureAdmin.php)
 
@@ -103,6 +103,7 @@ The module inventory below documents the main API flows. The source of truth is 
 | `POST` | `/api/admin/reset-password` | `AdminAuthController@resetPassword` | None | Reset admin password using verification token. |
 | `POST` | `/api/admin/logout` | `AdminAuthController@logout` | `auth:sanctum`, `admin` | Revoke current admin Sanctum bearer token. |
 | `GET` | `/api/admin/me` | `AdminAuthController@me` | `auth:sanctum`, `admin` | Return authenticated admin profile and isolated admin permissions. |
+| `GET` | `/api/admin/analytics` | `AdminAnalyticsController@index` | `auth:sanctum`, `admin`, `super-admin`, `reports.view` | Detailed platform analytics available to Super Admin only: breakdowns, trends, recruitment funnel, conversion rates, top companies/jobs, pending actions, and audit activity. |
 
 ### 3.3. Candidate Interview Module
 - **Controllers:** [`App\Http\Controllers\Api\CandidateInterviewController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/CandidateInterviewController.php), [`App\Http\Controllers\Api\CandidateAvailableSlotsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/CandidateAvailableSlotsController.php)
@@ -598,7 +599,7 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 ```text
 [x] Final physical tables migrated with audit trail and account status support; platform admins use the dedicated `admins` table and isolated admin RBAC tables.
 [x] Database seeders configured for the basic flow (Super Admin in users, RBAC, categories, skills, demo data)
-[x] 101 API route entries live in routes/api.php (86 OpenAPI paths)
+[x] 120 API route entries live in routes/api.php (100 OpenAPI paths)
 [x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json
 [x] Module 1: User Authentication (Candidate & Company registration, Sanctum auth)

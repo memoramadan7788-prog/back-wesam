@@ -84,6 +84,659 @@
                 }
             }
         },
+        "/admin/analytics": {
+            "get": {
+                "operationId": "admin.analytics",
+                "tags": [
+                    "AdminAnalytics"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "period": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "months": {},
+                                                        "from": {
+                                                            "type": "string"
+                                                        },
+                                                        "to": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "months",
+                                                        "from",
+                                                        "to"
+                                                    ]
+                                                },
+                                                "overview": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "users": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "active": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "inactive": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "candidates": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "company_accounts": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "legacy_admin_accounts": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "platform_admins": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "active",
+                                                                "inactive",
+                                                                "candidates",
+                                                                "company_accounts",
+                                                                "legacy_admin_accounts",
+                                                                "platform_admins"
+                                                            ]
+                                                        },
+                                                        "companies": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "active_approved": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "pending_review": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "rejected": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "suspended": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "active_approved",
+                                                                "pending_review",
+                                                                "rejected",
+                                                                "suspended"
+                                                            ]
+                                                        },
+                                                        "employees": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "approved": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "pending": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "rejected": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "removed": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "approved",
+                                                                "pending",
+                                                                "rejected",
+                                                                "removed"
+                                                            ]
+                                                        },
+                                                        "jobs": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "published": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "draft": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "closed": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "archived": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "public": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "private": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "published",
+                                                                "draft",
+                                                                "closed",
+                                                                "archived",
+                                                                "public",
+                                                                "private"
+                                                            ]
+                                                        },
+                                                        "applications": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "active": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "hired": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "rejected": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "active",
+                                                                "hired",
+                                                                "rejected"
+                                                            ]
+                                                        },
+                                                        "interviews": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "scheduled": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "completed": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "cancelled": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "scheduled",
+                                                                "completed",
+                                                                "cancelled"
+                                                            ]
+                                                        },
+                                                        "offers": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "sent": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "accepted": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "rejected": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "acceptance_rate": {
+                                                                    "type": "number"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "sent",
+                                                                "accepted",
+                                                                "rejected",
+                                                                "acceptance_rate"
+                                                            ]
+                                                        },
+                                                        "exams": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "total": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "published": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "draft": {
+                                                                    "type": "integer"
+                                                                },
+                                                                "attempts": {
+                                                                    "type": "integer",
+                                                                    "minimum": 0
+                                                                },
+                                                                "submitted_attempts": {
+                                                                    "type": "integer"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "total",
+                                                                "published",
+                                                                "draft",
+                                                                "attempts",
+                                                                "submitted_attempts"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "users",
+                                                        "companies",
+                                                        "employees",
+                                                        "jobs",
+                                                        "applications",
+                                                        "interviews",
+                                                        "offers",
+                                                        "exams"
+                                                    ]
+                                                },
+                                                "breakdowns": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "users_by_type": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "users_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "companies_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "employees_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "jobs_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "jobs_by_visibility": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "applications_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "interviews_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "offers_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "exams_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "exam_attempts_by_status": {
+                                                            "type": "object",
+                                                            "additionalProperties": {
+                                                                "type": "integer"
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "users_by_type",
+                                                        "users_by_status",
+                                                        "companies_by_status",
+                                                        "employees_by_status",
+                                                        "jobs_by_status",
+                                                        "jobs_by_visibility",
+                                                        "applications_by_status",
+                                                        "interviews_by_status",
+                                                        "offers_by_status",
+                                                        "exams_by_status",
+                                                        "exam_attempts_by_status"
+                                                    ]
+                                                },
+                                                "recruitment_funnel": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "applications": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "shortlisted": {
+                                                            "type": "integer"
+                                                        },
+                                                        "interviewing": {
+                                                            "type": "integer"
+                                                        },
+                                                        "offered": {
+                                                            "type": "integer"
+                                                        },
+                                                        "hired": {
+                                                            "type": "integer"
+                                                        },
+                                                        "shortlist_rate": {
+                                                            "type": "number"
+                                                        },
+                                                        "hire_rate": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "applications",
+                                                        "shortlisted",
+                                                        "interviewing",
+                                                        "offered",
+                                                        "hired",
+                                                        "shortlist_rate",
+                                                        "hire_rate"
+                                                    ]
+                                                },
+                                                "trends": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "monthly": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "month": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "users": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "companies": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "jobs": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "applications": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "interviews": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "offers": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    },
+                                                                    "hired": {
+                                                                        "type": "integer",
+                                                                        "minimum": 0
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "month",
+                                                                    "users",
+                                                                    "companies",
+                                                                    "jobs",
+                                                                    "applications",
+                                                                    "interviews",
+                                                                    "offers",
+                                                                    "hired"
+                                                                ]
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "monthly"
+                                                    ]
+                                                },
+                                                "top_companies": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "jobs": {
+                                                                "type": "string"
+                                                            },
+                                                            "employees": {
+                                                                "type": "string"
+                                                            },
+                                                            "exams": {
+                                                                "type": "string"
+                                                            },
+                                                            "applications": {
+                                                                "type": "integer"
+                                                            },
+                                                            "hired": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "name",
+                                                            "status",
+                                                            "jobs",
+                                                            "employees",
+                                                            "exams",
+                                                            "applications",
+                                                            "hired"
+                                                        ]
+                                                    }
+                                                },
+                                                "top_jobs": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "title": {
+                                                                "type": "string"
+                                                            },
+                                                            "company": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "visibility": {
+                                                                "type": "string"
+                                                            },
+                                                            "applications": {
+                                                                "type": "string"
+                                                            },
+                                                            "hired": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "title",
+                                                            "company",
+                                                            "status",
+                                                            "visibility",
+                                                            "applications",
+                                                            "hired"
+                                                        ]
+                                                    }
+                                                },
+                                                "pending_actions": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "companies_for_review": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "employee_requests": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "applications_to_review": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "offers_waiting_response": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "exams_in_progress": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "companies_for_review",
+                                                        "employee_requests",
+                                                        "applications_to_review",
+                                                        "offers_waiting_response",
+                                                        "exams_in_progress"
+                                                    ]
+                                                },
+                                                "recent_activity": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "action": {
+                                                                "type": "string"
+                                                            },
+                                                            "auditable_type": {
+                                                                "type": "string"
+                                                            },
+                                                            "actor": {
+                                                                "type": "string"
+                                                            },
+                                                            "actor_type": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "admin",
+                                                                    "user"
+                                                                ]
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "action",
+                                                            "auditable_type",
+                                                            "actor",
+                                                            "actor_type",
+                                                            "created_at"
+                                                        ]
+                                                    }
+                                                },
+                                                "generated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "period",
+                                                "overview",
+                                                "breakdowns",
+                                                "recruitment_funnel",
+                                                "trends",
+                                                "top_companies",
+                                                "top_jobs",
+                                                "pending_actions",
+                                                "recent_activity",
+                                                "generated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/admin/login": {
             "post": {
                 "operationId": "adminAuth.login",

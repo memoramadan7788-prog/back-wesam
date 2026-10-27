@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,8 +118,11 @@ Route::prefix('admin')->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/me', [AdminAuthController::class, 'me']);
 
-        // Platform KPIs (any admin account)
-        Route::middleware('admin')->get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        // Platform KPIs (Super Admin only)
+        Route::middleware(['super-admin', 'permission:reports.view'])
+            ->get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
+        Route::middleware(['super-admin', 'permission:reports.view'])->get('/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics');
 
         // Company review & lifecycle management (permission: companies.review)
         Route::middleware('permission:companies.review')->group(function () {

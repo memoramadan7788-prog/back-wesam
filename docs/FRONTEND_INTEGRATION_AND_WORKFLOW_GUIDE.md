@@ -557,6 +557,14 @@ flowchart TD
     ```
   - **Success Action (200):** Store `access_token` and `admin` info. Platform admin identity comes from the dedicated `admins` table; no OTP/MFA field is required.
 
+#### Screen 22A: Platform Analytics Dashboard (`/admin/analytics`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/admin/analytics?months=6`
+  - **Access Required:** authenticated platform Super Admin with the `super_admin` role and `reports.view` permission.
+  - **Data Returned:** detailed totals and breakdowns for users, companies, employees, jobs, applications, interviews, offers, exams, and exam attempts.
+  - **Analytics Returned:** recruitment funnel and conversion rates, monthly trends, pending actions, top companies by applications, top jobs by applications, and the latest audit activity.
+  - **Supported `months`:** integer from `3` to `12`; default is `6`.
+
 #### Screen 23: Company Review & Moderation (`/admin/companies`)
 - **Event: Page Load**
   - **Method & Route:** `GET /api/admin/companies?status=pending` (Permission: `companies.review`)
