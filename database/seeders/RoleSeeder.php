@@ -19,10 +19,6 @@ class RoleSeeder extends Seeder
         ];
 
         $roles = [
-            'super_admin' => ['platform', 'Platform owner', [
-                'companies.review', 'companies.suspend', 'roles.manage', 'permissions.manage',
-                'users.manage', 'audit.view', 'reports.view', 'chatbot.admin',
-            ]],
             'candidate' => ['platform', 'Regular candidate', [
                 'jobs.apply', 'applications.view_own', 'exams.take', 'interviews.book',
                 'offers.respond', 'chatbot.candidate',

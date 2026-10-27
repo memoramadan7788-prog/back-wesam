@@ -18,12 +18,18 @@ class DatabaseSeederTest extends TestCase
 
         $this->assertSame(0, $exitCode);
         $this->assertTrue(Schema::hasTable('admins'));
+        $this->assertFalse(Schema::hasColumn('admins', 'two_factor_secret'));
+        $this->assertFalse(Schema::hasColumn('admins', 'two_factor_confirmed_at'));
         $this->assertDatabaseHas('admins', [
             'email' => 'admin@example.com',
         ]);
         $this->assertDatabaseHas('users', ['email' => 'company@example.com']);
         $this->assertDatabaseHas('users', ['email' => 'candidate@example.com']);
         $this->assertDatabaseHas('admin_roles', ['name' => 'super_admin']);
+        $this->assertDatabaseMissing('roles', [
+            'name' => 'super_admin',
+            'deleted_at' => null,
+        ]);
         $this->assertDatabaseHas('admin_role_assignments', [
             'admin_id' => Admin::where('email', 'admin@example.com')->value('id'),
         ]);

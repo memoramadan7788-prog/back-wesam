@@ -40,7 +40,12 @@ class CompanyEmployeeOnboardingTest extends TestCase
         $this->hrRole = Role::where('name', 'hr')->firstOrFail();
         $this->interviewerRole = Role::where('name', 'interviewer')->firstOrFail();
         $this->regularRole = Role::where('name', 'employee')->firstOrFail();
-        $this->platformAdminRole = Role::where('name', 'super_admin')->firstOrFail();
+        $this->platformAdminRole = Role::firstOrCreate([
+            'name' => 'platform_reviewer',
+        ], [
+            'scope' => 'platform',
+            'description' => 'Legacy platform reviewer used for company-role validation',
+        ]);
 
         // Company A
         $this->companyOwner = User::factory()->create([

@@ -7,7 +7,6 @@ use App\Models\Admin;
 use App\Models\AdminRole;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\GoogleAuthenticatorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,7 +19,6 @@ class UserAuthTest extends TestCase
         parent::setUp();
         Role::firstOrCreate(['name' => 'candidate'], ['scope' => 'platform', 'description' => 'Candidate']);
         Role::firstOrCreate(['name' => 'company_admin'], ['scope' => 'company', 'description' => 'Company Admin']);
-        Role::firstOrCreate(['name' => 'super_admin'], ['scope' => 'platform', 'description' => 'Super Admin']);
     }
 
     public function test_candidate_can_register_successfully(): void
@@ -113,8 +111,6 @@ class UserAuthTest extends TestCase
             'name'         => 'Super Admin',
             'password'     => bcrypt('secret123'),
             'account_status_id' => AccountStatus::ACTIVE,
-            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-            'two_factor_confirmed_at' => now(),
         ]);
         $admin->roles()->attach(AdminRole::create([
             'name' => 'super_admin',
@@ -126,7 +122,6 @@ class UserAuthTest extends TestCase
         $adminResponse = $this->postJson('/api/admin/login', [
             'email'    => $admin->email,
             'password' => 'secret123',
-            'otp'      => app(GoogleAuthenticatorService::class)->codeForTesting($admin->two_factor_secret),
         ]);
 
         $adminResponse->assertStatus(200);
@@ -156,43 +151,15 @@ class UserAuthTest extends TestCase
             'name'         => 'Admin Without Role',
             'password'     => bcrypt('secret123'),
             'account_status_id' => AccountStatus::ACTIVE,
-            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-            'two_factor_confirmed_at' => now(),
         ]);
 
         $response = $this->postJson('/api/admin/login', [
             'email'    => $admin->email,
             'password' => 'secret123',
-            'otp'      => '123456',
         ]);
 
         $response->assertStatus(401);
         $response->assertJson(['message' => 'Invalid credentials.']);
-    }
-
-    public function test_super_admin_login_rejects_invalid_google_authenticator_code(): void
-    {
-        $admin = Admin::create([
-            'email' => 'admin-invalid-otp@example.com',
-            'name' => 'Super Admin',
-            'password' => bcrypt('secret123'),
-            'account_status_id' => AccountStatus::ACTIVE,
-            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-            'two_factor_confirmed_at' => now(),
-        ]);
-        $admin->roles()->attach(AdminRole::create([
-            'name' => 'super_admin',
-            'scope' => 'platform',
-        ])->id, ['assigned_at' => now()]);
-
-        $response = $this->postJson('/api/admin/login', [
-            'email' => $admin->email,
-            'password' => 'secret123',
-            'otp' => '000000',
-        ]);
-
-        $response->assertStatus(401);
-        $response->assertJson(['message' => 'Invalid Google Authenticator code.']);
     }
 
     public function test_blocked_user_cannot_login(): void

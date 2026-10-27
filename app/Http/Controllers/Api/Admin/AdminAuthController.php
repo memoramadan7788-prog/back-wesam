@@ -11,20 +11,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use App\Services\GoogleAuthenticatorService;
 
 class AdminAuthController extends Controller
 {
-    public function __construct(
-        protected GoogleAuthenticatorService $totp
-    ) {}
-
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
-            'otp' => ['required', 'digits:6'],
         ]);
 
         if ($validator->fails()) {
@@ -51,12 +45,6 @@ class AdminAuthController extends Controller
             return response()->json([
                 'message' => 'This admin account is inactive, suspended, or deleted.',
             ], 403);
-        }
-
-        if (! $admin->two_factor_secret || ! $this->totp->verify($admin->two_factor_secret, $request->string('otp')->toString())) {
-            return response()->json([
-                'message' => 'Invalid Google Authenticator code.',
-            ], 401);
         }
 
         $token = $admin->createToken('admin-api', ['admin'])->plainTextToken;

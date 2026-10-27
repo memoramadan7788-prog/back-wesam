@@ -21,7 +21,6 @@ use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\GoogleAuthenticatorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -234,15 +233,13 @@ class Phase0Test extends TestCase
 
     // ─── 0.5: Admin login uses users table ───────────────────────────
 
-    public function test_admin_login_uses_users_table(): void
+    public function test_admin_login_uses_dedicated_admins_table(): void
     {
         $admin = Admin::create([
             'name'         => 'Super Admin',
             'email'        => 'phase0-admin@example.com',
             'password'     => bcrypt('AdminPass123!'),
             'account_status_id' => AccountStatus::ACTIVE,
-            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-            'two_factor_confirmed_at' => now(),
         ]);
         $superAdminRole = AdminRole::create([
             'name' => 'super_admin',
@@ -253,7 +250,6 @@ class Phase0Test extends TestCase
         $response = $this->postJson('/api/admin/login', [
             'email'    => $admin->email,
             'password' => 'AdminPass123!',
-            'otp'      => app(GoogleAuthenticatorService::class)->codeForTesting($admin->two_factor_secret),
         ]);
 
         $response->assertStatus(200);
@@ -273,7 +269,6 @@ class Phase0Test extends TestCase
         $response = $this->postJson('/api/admin/login', [
             'email'    => $user->email,
             'password' => 'Password123!',
-            'otp'      => '123456',
         ]);
 
         $response->assertStatus(401);

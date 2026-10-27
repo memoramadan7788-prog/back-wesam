@@ -34,7 +34,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Services\GoogleAuthenticatorService;
 use Tests\TestCase;
 
 class FullRecruitmentFlowTest extends TestCase
@@ -74,14 +73,10 @@ class FullRecruitmentFlowTest extends TestCase
             'email' => 'superadmin@example.com',
             'password' => Hash::make('Password123!'),
             'account_status_id' => AccountStatus::ACTIVE,
-            'two_factor_secret' => 'JBSWY3DPEHPK3PXP',
-            'two_factor_confirmed_at' => now(),
         ]);
         $this->platformAdmin->roles()->attach(AdminRole::where('name', 'super_admin')->firstOrFail()->id, [
             'assigned_at' => now(),
         ]);
-        $superAdminRole = Role::where('name', 'super_admin')->firstOrFail();
-        $this->adminUser->roles()->attach($superAdminRole->id, ['assigned_at' => now()]);
 
         $this->companyAdminRole = Role::where('name', 'company_admin')->firstOrFail();
         $this->hrRole           = Role::where('name', 'hr')->firstOrFail();
@@ -105,7 +100,6 @@ class FullRecruitmentFlowTest extends TestCase
         $adminLoginResp = $this->postJson('/api/admin/login', [
             'email'    => 'superadmin@example.com',
             'password' => 'Password123!',
-            'otp'      => app(GoogleAuthenticatorService::class)->codeForTesting($this->platformAdmin->two_factor_secret),
         ]);
         $adminLoginResp->assertStatus(200);
         // Note: Admin login returns 'access_token', whereas user login returns 'token'
