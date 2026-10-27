@@ -11,6 +11,9 @@ use App\Http\Controllers\Api\Candidate\CandidateCvController;
 use App\Http\Controllers\Api\Candidate\CandidateEducationController;
 use App\Http\Controllers\Api\Candidate\CandidateExperienceController;
 use App\Http\Controllers\Api\Candidate\CandidateProfileController;
+use App\Http\Controllers\Api\Candidate\CandidateRecommendedJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSavedJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSkillController;
 use App\Http\Controllers\Api\CandidateAvailableSlotsController;
 use App\Http\Controllers\Api\CandidateInterviewController;
 use App\Http\Controllers\Api\Company\CompanyEmployeeController;
@@ -170,6 +173,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::patch('/notifications/read-all', [CandidateProfileController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
         Route::patch('/notifications/{id}/read', [CandidateProfileController::class, 'markNotificationAsRead'])->name('notifications.read');
 
+        // Skills Management
+        Route::get('/skills', [CandidateSkillController::class, 'index'])->name('skills.index');
+        Route::post('/skills', [CandidateSkillController::class, 'sync'])->name('skills.sync');
+
         // CV Management
         Route::get('/cvs', [CandidateCvController::class, 'index'])->name('cvs.index');
         Route::post('/cvs', [CandidateCvController::class, 'store'])->name('cvs.store');
@@ -189,6 +196,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/applications', [CandidateApplicationController::class, 'index'])->name('applications.index');
         Route::get('/applications/{id}', [CandidateApplicationController::class, 'show'])->name('applications.show');
         Route::delete('/applications/{id}/withdraw', [CandidateApplicationController::class, 'withdraw'])->name('applications.withdraw');
+
+        // Recommended Jobs (#12)
+        Route::get('/recommended-jobs', [CandidateRecommendedJobController::class, 'index'])->name('recommended-jobs.index');
+
+        // Saved Jobs (#13, #14, #15)
+        Route::get('/saved-jobs', [CandidateSavedJobController::class, 'index'])->name('saved-jobs.index');
+        Route::post('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'store'])->whereNumber('jobId')->name('saved-jobs.store');
+        Route::delete('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'destroy'])->whereNumber('jobId')->name('saved-jobs.destroy');
 
         // Available Interview Slots & Interviews
         Route::get('/available-slots', [CandidateAvailableSlotsController::class, 'index'])->name('available-slots');

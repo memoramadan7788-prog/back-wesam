@@ -17,7 +17,6 @@ class Job extends Model
 {
     use HasFactory, SoftDeletes, Auditable;
 
-
     protected $table = 'jobs';
     protected $guarded = [];
 
@@ -70,6 +69,12 @@ class Job extends Model
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'job_skills', 'job_id', 'skill_id')->withPivot('is_required');
+    }
+
+    public function savedByCandidates(): BelongsToMany
+    {
+        return $this->belongsToMany(CandidateProfile::class, 'candidate_saved_jobs', 'job_id', 'candidate_id')
+            ->withTimestamps();
     }
 
     public const SORTABLE = [
@@ -138,5 +143,4 @@ class Job extends Model
     {
         return '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term) . '%';
     }
-
 }
