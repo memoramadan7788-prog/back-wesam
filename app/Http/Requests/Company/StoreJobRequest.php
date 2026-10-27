@@ -38,6 +38,7 @@ class StoreJobRequest extends FormRequest
             'openings_count'   => ['nullable', 'integer', 'min:1'],
             'deadline'         => ['nullable', 'date', 'after:today'],
             'visibility'       => ['nullable', Rule::in(['public', 'private'])],
+            'private_apply_mode' => ['nullable', Rule::in(['all_employees', 'nominated_only'])],
             'skills'           => ['nullable', 'array'],
         ];
     }

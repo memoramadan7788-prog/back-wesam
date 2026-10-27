@@ -32,6 +32,7 @@ class CompanyJobResource extends JsonResource
             'openings_count'     => $this->openings_count,
             'deadline'           => $this->deadline?->toIso8601String(),
             'visibility'         => $this->visibility,
+            'private_apply_mode' => $this->private_apply_mode,
             'status'             => $this->status,
             'published_at'       => $this->published_at?->toIso8601String(),
             'closed_at'          => $this->closed_at?->toIso8601String(),

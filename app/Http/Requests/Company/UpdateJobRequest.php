@@ -30,6 +30,7 @@ class UpdateJobRequest extends FormRequest
             'openings_count'   => ['nullable', 'integer', 'min:1'],
             'deadline'         => ['nullable', 'date'],
             'visibility'       => ['nullable', Rule::in(['public', 'private'])],
+            'private_apply_mode' => ['nullable', Rule::in(['all_employees', 'nominated_only'])],
             'skills'           => ['nullable', 'array'],
             'skills.*'         => ['integer', 'exists:skills,id'],
         ];

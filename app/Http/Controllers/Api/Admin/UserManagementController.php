@@ -116,7 +116,7 @@ class UserManagementController extends Controller
      */
     public function roles(): AnonymousResourceCollection
     {
-        $roles = Role::with('permissions')->get();
+        $roles = Role::with(['permissions', 'category'])->get();
 
         return RoleResource::collection($roles);
     }

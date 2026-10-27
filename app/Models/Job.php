@@ -106,6 +106,34 @@ class Job extends Model
             ->whereHas('company', fn (Builder $c) => $c->where('status', 'approved'));
     }
 
+    public function scopeAvailableInternal(Builder $query, int $companyId, ?int $userId = null): Builder
+    {
+        return $query
+            ->where('jobs.company_id', $companyId)
+            ->where('jobs.status', 'published')
+            ->where('jobs.visibility', 'private')
+            ->whereNull('jobs.closed_at')
+            ->where(function (Builder $q) {
+                $q->whereNull('jobs.deadline')
+                    ->orWhere('jobs.deadline', '>', now());
+            })
+            ->where(function (Builder $q) use ($userId, $companyId) {
+                $q->where('jobs.private_apply_mode', 'all_employees')
+                    ->orWhereNull('jobs.private_apply_mode');
+
+                if ($userId) {
+                    $q->orWhereHas('jobNominations', function (Builder $nomination) use ($userId, $companyId) {
+                        $nomination
+                            ->whereHas('employee', fn (Builder $employee) => $employee
+                                ->where('user_id', $userId)
+                                ->where('company_id', $companyId)
+                                ->where('status', 'approved'));
+                    });
+                }
+            })
+            ->whereHas('company', fn (Builder $c) => $c->where('status', 'approved'));
+    }
+
     public function scopeFilter(Builder $query, array $f): Builder
     {
         return $query

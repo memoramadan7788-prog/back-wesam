@@ -4,6 +4,7 @@ namespace Tests\Feature\Setup;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Admin;
 use Tests\TestCase;
@@ -26,6 +27,12 @@ class DatabaseSeederTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'company@example.com']);
         $this->assertDatabaseHas('users', ['email' => 'candidate@example.com']);
         $this->assertDatabaseHas('admin_roles', ['name' => 'super_admin']);
+        $this->assertDatabaseHas('role_categories', ['name' => 'user']);
+        $this->assertDatabaseHas('role_categories', ['name' => 'company']);
+        $this->assertDatabaseHas('roles', [
+            'name' => 'company_admin',
+            'role_category_id' => DB::table('role_categories')->where('name', 'company')->value('id'),
+        ]);
         $this->assertDatabaseMissing('roles', [
             'name' => 'super_admin',
             'deleted_at' => null,

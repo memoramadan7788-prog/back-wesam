@@ -268,6 +268,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::patch('/jobs/{id}/status', [CompanyJobController::class, 'changeStatus'])->name('jobs.change-status');
         Route::delete('/jobs/{id}', [CompanyJobController::class, 'destroy'])->name('jobs.destroy');
 
+        // Published private jobs for approved members of this company only
+        Route::get('/internal-jobs', [CompanyJobController::class, 'internalIndex'])->name('internal-jobs.index');
+        Route::get('/internal-jobs/{id}', [CompanyJobController::class, 'internalShow'])->name('internal-jobs.show');
+
         // Job Interview Rounds CRUD (Package 3)
         Route::middleware('permission:interviews.assign')->group(function () {
             Route::get('/jobs/{job}/interview-rounds', [JobInterviewRoundController::class, 'index'])->name('jobs.interview-rounds.index');

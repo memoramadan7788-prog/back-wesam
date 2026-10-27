@@ -429,12 +429,15 @@ flowchart TD
       "openings_count": 2,
       "deadline": "2026-12-31",
       "visibility": "public",
+      "private_apply_mode": null,
       "skills": [
         { "skill_id": 1, "is_required": true },
         { "skill_id": 2, "is_required": false }
       ]
     }
     ```
+  - To create an internal company-only opening, send "visibility": "private" and optionally "private_apply_mode": "all_employees" (the default). It will not appear in the public GET /api/jobs endpoints.
+  - Approved company members can list internal openings with GET /api/company/internal-jobs and view one with GET /api/company/internal-jobs/{id}. Jobs using private_apply_mode: "nominated_only" are visible only to approved employees nominated for that job.
   - `StoreJobRequest` accepts the canonical names `category_id`, `work_mode`, `salary_min`, `salary_max`, and `location`. The legacy aliases `job_category_id`, `workplace_type`, `min_salary`, `max_salary`, `city`, and `country_id` are rejected and must not be sent.
   - **Error Action (403 Forbidden):** If company status is `pending`, returns:
     `"Your company account is pending administrative approval. You cannot publish jobs until your account is approved."`
@@ -552,7 +555,7 @@ flowchart TD
       "password": "Password123!"
     }
     ```
-  - **Success Action (200):** Store `access_token` and `admin` info. Identity is unified with the `users` table (`account_type: 'admin'`).
+  - **Success Action (200):** Store `access_token` and `admin` info. Platform admin identity comes from the dedicated `admins` table; no OTP/MFA field is required.
 
 #### Screen 23: Company Review & Moderation (`/admin/companies`)
 - **Event: Page Load**
@@ -682,7 +685,7 @@ flowchart TD
     }
     ```
   - **Backend Action:**
-    1. Validates `role_id` exists and its `scope === 'company'` (e.g. `hr`, `interviewer`, `employee`). Assigning platform roles like `super_admin` returns `422 Unprocessable Content`.
+    1. Validates `role_id` exists and its `scope === 'company'` (e.g. `hr`, `interviewer`, `employee`). Platform admin roles are stored separately and cannot be assigned through company employee onboarding.
     2. Sets `company_employees.status = 'approved'`, `joined_at = now()`, `reviewed_by = auth()->id()`, and `reviewed_at = now()`.
     3. Attaches role in `user_roles` pivot with `company_id`.
     4. Automatically generates a system notification in `notifications` table (`type: 'company.join_approved'`).
@@ -798,7 +801,7 @@ The entire frontend team can test every single button and payload live right now
 In this architecture, regular company staff (`company_admin`, `hr`, `interviewer`, `employee`) have their tenant scope (`company_id`) implicitly resolved from their active affiliation in `company_employees` or `user_roles`. They can never interact with or modify jobs, applications, or employee rosters belonging to another company (enforced with `403 Forbidden`).
 
 ### Admin Behavior:
-Platform Administrators (`account_type = 'admin'`) have global oversight and do NOT have a static single company affiliation.
+Platform Administrators are stored in the dedicated `admins` table, use isolated `admin_roles`/`admin_permissions`, have global oversight, and do NOT have a static single company affiliation.
 1. When a platform admin interacts with company-scoped endpoints (such as `POST /api/company/jobs`, `GET /api/company/employees`, etc.), they **MUST** supply an explicit company context using either:
    - Query parameter: `?company_id=1`
    - Request body: `{ "company_id": 1, ... }`

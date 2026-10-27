@@ -5,10 +5,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 0.5: Drop the admins table.
+ * Historical transition migration.
  *
- * Admin authentication is now handled via the `users` table with account_type='admin'.
- * The separate admins table is no longer needed.
+ * The old admins table is removed here and recreated by the current
+ * platform-admin migration with isolated roles and permissions.
+ * Keep this migration because it is part of the executed migration history.
  */
 return new class extends Migration
 {

@@ -123,7 +123,7 @@ class CompanyEmployeeService
         }
 
         $role = Role::findOrFail($roleId);
-        if ($role->scope !== 'company') {
+        if (! $role->isCompanyRole()) {
             abort(422, 'Assigned role must have company scope.');
         }
 
