@@ -260,5 +260,24 @@ class AdminPortalTest extends TestCase
         $response->assertJsonStructure(['data' => [['id', 'action', 'auditable_type', 'auditable_id', 'user']]]);
         $response->assertJsonPath('data.0.action', 'company.approved');
     }
-}
 
+    public function test_admin_can_view_kpis_dashboard(): void
+    {
+        $response = $this->actingAs($this->admin)->getJson('/api/admin/dashboard');
+
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'data' => [
+                'users' => ['total', 'new_30d', 'prev_30d', 'inactive', 'by_type'],
+                'companies' => ['total', 'new_30d', 'by_status'],
+                'jobs' => ['total', 'published'],
+                'applications' => ['total', 'last_30d', 'prev_30d'],
+                'interviews' => ['scheduled'],
+                'trend',
+                'pending_companies',
+                'recent_activity',
+                'generated_at',
+            ],
+        ]);
+    }
+}
