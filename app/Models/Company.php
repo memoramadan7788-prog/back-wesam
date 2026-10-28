@@ -2,20 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-
 use App\Traits\Auditable;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Company extends Model
 {
-    use HasFactory, SoftDeletes, Auditable;
-
+    use Auditable, HasFactory, SoftDeletes;
 
     protected $table = 'companies';
+
     protected $guarded = [];
 
     protected $attributes = [
@@ -26,12 +25,12 @@ class Company extends Model
         'reviewed_at' => 'datetime',
     ];
 
-        public function accountStatus(): BelongsTo
+    public function accountStatus(): BelongsTo
     {
         return $this->belongsTo(AccountStatus::class, 'account_status_id');
     }
 
-public function owner(): BelongsTo
+    public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
     }
@@ -59,6 +58,11 @@ public function owner(): BelongsTo
     public function companyEmployees(): HasMany
     {
         return $this->hasMany(CompanyEmployee::class, 'company_id');
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(CompanyDocument::class, 'company_id');
     }
 
     public function jobs(): HasMany
