@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AccountStatus;
+use App\Models\Admin;
+use App\Models\AdminRole;
 use App\Models\Application;
 use App\Models\CandidateProfile;
 use App\Models\Company;
@@ -25,6 +27,8 @@ use App\Models\Skill;
 use App\Models\User;
 use Carbon\Carbon;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\AdminPermissionSeeder;
+use Database\Seeders\AdminRoleSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -37,6 +41,7 @@ class FullRecruitmentFlowTest extends TestCase
     use RefreshDatabase;
 
     protected User $adminUser;
+    protected Admin $platformAdmin;
     protected Role $companyAdminRole;
     protected Role $hrRole;
     protected Role $interviewerRole;
@@ -52,6 +57,8 @@ class FullRecruitmentFlowTest extends TestCase
 
         $this->seed(PermissionSeeder::class);
         $this->seed(RoleSeeder::class);
+        $this->seed(AdminPermissionSeeder::class);
+        $this->seed(AdminRoleSeeder::class);
 
         // System Admin
         $this->adminUser = User::factory()->create([
@@ -59,6 +66,16 @@ class FullRecruitmentFlowTest extends TestCase
             'name'         => 'System Administrator',
             'email'        => 'superadmin@example.com',
             'password'     => Hash::make('Password123!'),
+        ]);
+
+        $this->platformAdmin = Admin::create([
+            'name' => 'Platform Super Admin',
+            'email' => 'superadmin@example.com',
+            'password' => Hash::make('Password123!'),
+            'account_status_id' => AccountStatus::ACTIVE,
+        ]);
+        $this->platformAdmin->roles()->attach(AdminRole::where('name', 'super_admin')->firstOrFail()->id, [
+            'assigned_at' => now(),
         ]);
 
         $this->companyAdminRole = Role::where('name', 'company_admin')->firstOrFail();

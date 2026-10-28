@@ -6,6 +6,7 @@ use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
@@ -15,6 +16,16 @@ class Role extends Model
 
     protected $table = 'roles';
     protected $guarded = [];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(RoleCategory::class, 'role_category_id');
+    }
+
+    public function isCompanyRole(): bool
+    {
+        return ($this->category?->name ?? $this->scope) === 'company';
+    }
 
     public function userRoles(): HasMany
     {

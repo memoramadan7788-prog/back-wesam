@@ -3,6 +3,7 @@
 namespace Tests\Feature\Company;
 
 use App\Models\Company;
+use App\Models\CompanyEmployee;
 use App\Models\Job;
 use App\Models\Skill;
 use App\Models\User;
@@ -163,5 +164,75 @@ class CompanyJobManagementTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertSoftDeleted('jobs', ['id' => $job->id]);
+    }
+
+    public function test_private_job_is_visible_only_to_approved_members_of_its_company(): void
+    {
+        $owner = User::factory()->create(['account_type' => 'company']);
+        $company = Company::factory()->create([
+            'owner_user_id' => $owner->id,
+            'status' => 'approved',
+        ]);
+
+        $employee = User::factory()->create(['account_type' => 'company']);
+        CompanyEmployee::create([
+            'company_id' => $company->id,
+            'user_id' => $employee->id,
+            'status' => 'approved',
+            'joined_at' => now(),
+        ]);
+
+        $otherOwner = User::factory()->create(['account_type' => 'company']);
+        $otherCompany = Company::factory()->create([
+            'owner_user_id' => $otherOwner->id,
+            'status' => 'approved',
+        ]);
+        $otherEmployee = User::factory()->create(['account_type' => 'company']);
+        CompanyEmployee::create([
+            'company_id' => $otherCompany->id,
+            'user_id' => $otherEmployee->id,
+            'status' => 'approved',
+            'joined_at' => now(),
+        ]);
+
+        $response = $this->actingAs($owner)->postJson('/api/company/jobs', [
+            'title' => 'Internal Backend Opening',
+            'description' => 'This internal opportunity is available only to employees of this company.',
+            'work_mode' => 'hybrid',
+            'employment_type' => 'full_time',
+            'visibility' => 'private',
+            'private_apply_mode' => 'all_employees',
+        ]);
+
+        $response->assertCreated();
+        $job = Job::where('title', 'Internal Backend Opening')->firstOrFail();
+        $this->assertSame('private', $job->visibility);
+        $this->assertSame('all_employees', $job->private_apply_mode);
+
+        $this->actingAs($employee)
+            ->getJson('/api/company/internal-jobs')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Internal Backend Opening');
+
+        $this->actingAs($otherEmployee)
+            ->getJson('/api/company/internal-jobs')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson('/api/jobs')
+            ->assertOk()
+            ->assertJsonMissing(['title' => 'Internal Backend Opening']);
+
+        $this->getJson("/api/jobs/{$job->id}")->assertNotFound();
+    }
+
+    public function test_user_without_company_cannot_view_internal_jobs(): void
+    {
+        $user = User::factory()->create(['account_type' => 'company']);
+
+        $this->actingAs($user)
+            ->getJson('/api/company/internal-jobs')
+            ->assertForbidden();
     }
 }

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\RoleCategory;
 use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
@@ -19,10 +20,6 @@ class RoleSeeder extends Seeder
         ];
 
         $roles = [
-            'super_admin' => ['platform', 'Platform owner', [
-                'companies.review', 'companies.suspend', 'roles.manage', 'permissions.manage',
-                'users.manage', 'audit.view', 'reports.view', 'chatbot.admin',
-            ]],
             'candidate' => ['platform', 'Regular candidate', [
                 'jobs.apply', 'applications.view_own', 'exams.take', 'interviews.book',
                 'offers.respond', 'chatbot.candidate',
@@ -41,7 +38,18 @@ class RoleSeeder extends Seeder
         ];
 
         foreach ($roles as $name => [$scope, $description, $keys]) {
-            $role = Role::firstOrCreate(['name' => $name], ['scope' => $scope, 'description' => $description]);
+            $category = RoleCategory::firstOrCreate([
+                'name' => $scope === 'company' ? 'company' : 'user',
+            ]);
+
+            $role = Role::updateOrCreate(
+                ['name' => $name],
+                [
+                    'scope' => $scope,
+                    'role_category_id' => $category->id,
+                    'description' => $description,
+                ]
+            );
             $ids = Permission::whereIn('key', $keys)->pluck('id');
             $role->permissions()->sync($ids);
         }

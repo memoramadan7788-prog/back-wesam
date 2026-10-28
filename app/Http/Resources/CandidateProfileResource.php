@@ -24,10 +24,15 @@ class CandidateProfileResource extends JsonResource
             'photo_path'        => $this->photo_path,
             'years_experience'  => $this->years_experience,
             'has_no_experience' => (bool) $this->has_no_experience,
+            'skills'            => $this->whenLoaded('skills', fn () => $this->skills->map(fn ($s) => [
+                'id'    => $s->id,
+                'name'  => $s->name,
+                'type'  => $s->type,
+                'level' => $s->pivot?->level,
+            ])),
             'experiences'       => CandidateExperienceResource::collection($this->whenLoaded('candidateExperiences')),
             'educations'        => CandidateEducationResource::collection($this->whenLoaded('candidateEducations')),
             'cvs'               => CandidateCvResource::collection($this->whenLoaded('candidateCvs')),
         ];
     }
 }
-

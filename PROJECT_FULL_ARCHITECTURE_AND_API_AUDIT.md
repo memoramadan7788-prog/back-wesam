@@ -5,8 +5,8 @@
 ## 1. Executive Summary & System Overview
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
-1. **The Database Catalog:** Complete specification of the **55 final physical tables** across the system, detailing their primary keys, audit trail attributes (`UID`, `LUID`, `timestamps`, `softDeletes`), and status.
-2. **Current Implementation:** The current route inventory contains **101 API route entries** and **86 OpenAPI paths**, backed by **217 passing tests with 1143 assertions**. Admin authentication is consolidated in the `users` table with `account_type=admin`.
+1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
+2. **Current Implementation:** The current route inventory contains **120 API route entries** and **100 OpenAPI paths**, backed by **229 passing tests with 1283 assertions**. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
@@ -19,17 +19,19 @@ Every table below is created by Laravel migrations. The complete migration-and-s
 |---|------------|----------------|------------------------|---------------------|
 | 1 | `audit_logs` | [2026_10_23_000003_create_audit_logs_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_23_000003_create_audit_logs_table.php) | Administrative and security audit events | `timestamps` |
 | 2 | `account_statuses` | [2026_10_20_100000_create_account_statuses_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100000_create_account_statuses_table.php) | Lookup table for status (Active=1, Deactivated=2, Blocked=3, Deleted=4) | Full (`UID`, `LUID`, SoftDeletes) |
-| 3 | `users` | [2026_10_20_100001_create_users_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100001_create_users_table.php) | Core user identities (Candidates, HR, Interviewers, Admins) | Full (`UID`, `LUID`, SoftDeletes) |
+| 3 | `users` | [2026_10_20_100001_create_users_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100001_create_users_table.php) | Core user identities (Candidates, HR, Interviewers, Employees) | Full (`UID`, `LUID`, SoftDeletes) |
 | 4 | `password_reset_tokens` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | Laravel framework password reset tokens | Framework Internal |
 | 5 | `sessions` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | HTTP session storage for web sessions | Framework Internal |
 | 6 | `queue_jobs` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | Background queue jobs (renamed from `jobs` to avoid conflict) | Framework Internal |
 | 7 | `job_batches` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | Batch execution tracking for queues | Framework Internal |
 | 8 | `failed_jobs` | [2026_10_20_100002_create_laravel_support_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100002_create_laravel_support_tables.php) | Failed background queue records | Framework Internal |
-| 9 | `roles` | [2026_10_20_100003_create_roles_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100003_create_roles_table.php) | System RBAC roles (super_admin, candidate, hr, etc.) | Full (`UID`, `LUID`, SoftDeletes) |
+| 9 | `roles` | [2026_10_20_100003_create_roles_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100003_create_roles_table.php) | User RBAC roles (candidate, company_admin, hr, interviewer, employee) | Full (`UID`, `LUID`, SoftDeletes) |
 | 10 | `permissions` | [2026_10_20_100004_create_permissions_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100004_create_permissions_table.php) | Granular permission keys (`jobs.create`, `cvs.view`, etc.) | Full (`UID`, `LUID`, SoftDeletes) |
 | 11 | `role_permissions` | [2026_10_20_100005_create_role_permissions_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100005_create_role_permissions_table.php) | Pivot table mapping roles to permissions | Pivot (`UID`, `LUID`, Timestamps) |
 | 12 | `companies` | [2026_10_20_100006_create_companies_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100006_create_companies_table.php) | Company profiles, verification documents, and account status | Full (`UID`, `LUID`, SoftDeletes) |
 | 13 | `user_roles` | [2026_10_20_100007_create_user_roles_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100007_create_user_roles_table.php) | Pivot table mapping users to roles within companies | Pivot (`UID`, `LUID`, Timestamps) |
+
+Platform administrators are isolated from the user RBAC tables. Their account, roles, permissions, and assignments live in `admins`, `admin_roles`, `admin_permissions`, `admin_role_permissions`, and `admin_role_assignments`, created by [2026_10_27_000001_create_platform_admin_auth_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_27_000001_create_platform_admin_auth_tables.php). The cleanup migrations remove old MFA columns and the legacy user `super_admin` role.
 | 14 | `company_social_links` | [2026_10_20_100008_create_company_social_links_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100008_create_company_social_links_table.php) | Social links (LinkedIn, Twitter, Website) for companies | Full (`UID`, `LUID`, SoftDeletes) |
 | 15 | `company_employees` | [2026_10_20_100009_create_company_employees_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100009_create_company_employees_table.php) | Employee records, titles, and approval statuses | Full (`UID`, `LUID`, SoftDeletes) |
 | 16 | `candidate_profiles` | [2026_10_20_100010_create_candidate_profiles_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100010_create_candidate_profiles_table.php) | Candidate bio, headline, photo, years of experience | Full (`UID`, `LUID`, SoftDeletes) |
@@ -77,7 +79,7 @@ Every table below is created by Laravel migrations. The complete migration-and-s
 
 ## 3. Currently Implemented APIs & Components (100% Operational)
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 101 API route entries and is backed by the full feature test suite.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 120 API route entries and is backed by the full feature test suite.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -90,17 +92,18 @@ The module inventory below documents the main API flows. The source of truth is 
 | `GET` | `/api/jobs/{job}` | `JobController@show` | `throttle:60,1` | Retrieve single published job details including company, category, and required skills. |
 
 ### 3.2. Admin Authentication Module
-- **Controller:** [`App\Http\Controllers\Api\Admin\AuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AuthController.php)
-- **Model:** [`App\Models\User`](file:///c:/Projects/hr_managment_system/app/Models/User.php) with `account_type=admin`
+- **Controllers:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php), [`App\Http\Controllers\Api\Admin\AdminAnalyticsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAnalyticsController.php)
+- **Model:** [`App\Models\Admin`](file:///c:/Projects/hr_managment_system/app/Models/Admin.php)
 - **Middleware:** [`App\Http\Middleware\EnsureAdmin`](file:///c:/Projects/hr_managment_system/app/Http/Middleware/EnsureAdmin.php)
 
 | HTTP Method | Route Endpoint | Action / Method | Middleware | Description |
 |:---|:---|:---|:---|:---|
-| `POST` | `/api/admin/login` | `AuthController@login` | None | Authenticate an admin user via email and password; returns Sanctum bearer token. |
-| `POST` | `/api/admin/forgot-password` | `AuthController@forgotPassword` | None | Send admin password reset notification with token. |
-| `POST` | `/api/admin/reset-password` | `AuthController@resetPassword` | None | Reset admin password using verification token. |
-| `POST` | `/api/admin/logout` | `AuthController@logout` | `auth:sanctum`, `admin` | Revoke current admin Sanctum bearer token. |
-| `GET` | `/api/admin/me` | `AuthController@me` | `auth:sanctum`, `admin` | Return authenticated admin profile and permissions. |
+| `POST` | `/api/admin/login` | `AdminAuthController@login` | None | Authenticate a platform admin via email and password; returns Sanctum bearer token. No MFA/OTP is required. |
+| `POST` | `/api/admin/forgot-password` | `AdminAuthController@forgotPassword` | None | Send admin password reset notification with token. |
+| `POST` | `/api/admin/reset-password` | `AdminAuthController@resetPassword` | None | Reset admin password using verification token. |
+| `POST` | `/api/admin/logout` | `AdminAuthController@logout` | `auth:sanctum`, `admin` | Revoke current admin Sanctum bearer token. |
+| `GET` | `/api/admin/me` | `AdminAuthController@me` | `auth:sanctum`, `admin` | Return authenticated admin profile and isolated admin permissions. |
+| `GET` | `/api/admin/analytics` | `AdminAnalyticsController@index` | `auth:sanctum`, `admin`, `super-admin`, `reports.view` | Detailed platform analytics available to Super Admin only: breakdowns, trends, recruitment funnel, conversion rates, top companies/jobs, pending actions, and audit activity. |
 
 ### 3.3. Candidate Interview Module
 - **Controllers:** [`App\Http\Controllers\Api\CandidateInterviewController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/CandidateInterviewController.php), [`App\Http\Controllers\Api\CandidateAvailableSlotsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/CandidateAvailableSlotsController.php)
@@ -594,9 +597,9 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 ## 5. Architectural Quality Checklist & Next Steps
 
 ```text
-[x] 55 final physical tables migrated with audit trail & account_status_id (the legacy admins table is removed)
+[x] Final physical tables migrated with audit trail and account status support; platform admins use the dedicated `admins` table and isolated admin RBAC tables.
 [x] Database seeders configured for the basic flow (Super Admin in users, RBAC, categories, skills, demo data)
-[x] 101 API route entries live in routes/api.php (86 OpenAPI paths)
+[x] 120 API route entries live in routes/api.php (100 OpenAPI paths)
 [x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json
 [x] Module 1: User Authentication (Candidate & Company registration, Sanctum auth)

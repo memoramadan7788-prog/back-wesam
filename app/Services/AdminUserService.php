@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountStatus;
+use App\Models\Admin;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
@@ -33,9 +34,9 @@ class AdminUserService
     /**
      * Update user account status (e.g. activate, block, deactivate).
      */
-    public function updateStatus(User $user, int $newStatusId, int $adminId, ?string $reason = null): User
+    public function updateStatus(User $user, int $newStatusId, ?int $adminId, ?string $reason = null, ?int $adminActorId = null): User
     {
-        return DB::transaction(function () use ($user, $newStatusId, $adminId, $reason) {
+        return DB::transaction(function () use ($user, $newStatusId, $adminId, $reason, $adminActorId) {
             $oldStatusId = $user->account_status_id;
 
             $user->update([
@@ -53,7 +54,8 @@ class AdminUserService
                 userId: $adminId,
                 oldValues: ['account_status_id' => $oldStatusId],
                 newValues: ['account_status_id' => $newStatusId],
-                reason: $reason ?? "User account status changed from {$oldStatusId} to {$newStatusId}."
+                reason: $reason ?? "User account status changed from {$oldStatusId} to {$newStatusId}.",
+                adminId: $adminActorId
             );
 
             return $user->fresh(['accountStatus', 'roles', 'candidateProfile', 'ownedCompanies']);
@@ -63,13 +65,14 @@ class AdminUserService
     /**
      * Assign a role to a user.
      */
-    public function assignRole(User $user, int $roleId, int $adminId, ?int $companyId = null): User
+    public function assignRole(User $user, int $roleId, ?int $adminId, ?int $companyId = null, ?int $adminActorId = null): User
     {
-        return DB::transaction(function () use ($user, $roleId, $adminId, $companyId) {
+        return DB::transaction(function () use ($user, $roleId, $adminId, $companyId, $adminActorId) {
             $user->roles()->syncWithoutDetaching([
                 $roleId => [
                     'company_id'  => $companyId,
                     'assigned_by' => $adminId,
+                    'assigned_by_admin_id' => $adminActorId,
                     'assigned_at' => now(),
                 ],
             ]);
@@ -82,7 +85,8 @@ class AdminUserService
                 userId: $adminId,
                 oldValues: null,
                 newValues: ['role_id' => $roleId, 'role_name' => $role?->name, 'company_id' => $companyId],
-                reason: "Role '{$role?->name}' assigned to user."
+                reason: "Role '{$role?->name}' assigned to user.",
+                adminId: $adminActorId
             );
 
             return $user->fresh(['roles.permissions', 'accountStatus']);
@@ -92,9 +96,9 @@ class AdminUserService
     /**
      * Remove a role from a user.
      */
-    public function removeRole(User $user, int $roleId, int $adminId): User
+    public function removeRole(User $user, int $roleId, ?int $adminId, ?int $adminActorId = null): User
     {
-        return DB::transaction(function () use ($user, $roleId, $adminId) {
+        return DB::transaction(function () use ($user, $roleId, $adminId, $adminActorId) {
             $role = Role::find($roleId);
             $user->roles()->detach($roleId);
 
@@ -104,7 +108,8 @@ class AdminUserService
                 userId: $adminId,
                 oldValues: ['role_id' => $roleId, 'role_name' => $role?->name],
                 newValues: null,
-                reason: "Role '{$role?->name}' removed from user."
+                reason: "Role '{$role?->name}' removed from user.",
+                adminId: $adminActorId
             );
 
             return $user->fresh(['roles.permissions', 'accountStatus']);

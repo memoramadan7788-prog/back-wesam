@@ -41,6 +41,11 @@ public function owner(): BelongsTo
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function reviewerAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'reviewed_by_admin_id');
+    }
+
     public function userRoles(): HasMany
     {
         return $this->hasMany(UserRole::class, 'company_id');

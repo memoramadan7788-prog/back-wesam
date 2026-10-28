@@ -11,6 +11,9 @@ use App\Http\Controllers\Api\Candidate\CandidateCvController;
 use App\Http\Controllers\Api\Candidate\CandidateEducationController;
 use App\Http\Controllers\Api\Candidate\CandidateExperienceController;
 use App\Http\Controllers\Api\Candidate\CandidateProfileController;
+use App\Http\Controllers\Api\Candidate\CandidateRecommendedJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSavedJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSkillController;
 use App\Http\Controllers\Api\CandidateAvailableSlotsController;
 use App\Http\Controllers\Api\CandidateInterviewController;
 use App\Http\Controllers\Api\Company\CompanyEmployeeController;
@@ -29,6 +32,7 @@ use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +99,11 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     });
 });
 
+Route::prefix('auth')->group(function () {
+    Route::post('/forgot-password', [UserAuthController::class, 'forgotPassword'])->name('password.email');
+    Route::post('/reset-password', [UserAuthController::class, 'resetPassword'])->name('password.reset');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Admin Authentication Routes
@@ -105,12 +114,15 @@ Route::prefix('admin')->group(function () {
     Route::post('/forgot-password', [AdminAuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AdminAuthController::class, 'resetPassword']);
 
-    Route::middleware(['auth:sanctum'])->group(function () {
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout']);
         Route::get('/me', [AdminAuthController::class, 'me']);
 
-        // Platform KPIs (any admin account)
-        Route::middleware('admin')->get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        // Platform KPIs (Super Admin only)
+        Route::middleware(['super-admin', 'permission:reports.view'])
+            ->get('/dashboard', [AdminDashboardController::class, 'index'])
+            ->name('admin.dashboard');
+        Route::middleware(['super-admin', 'permission:reports.view'])->get('/analytics', [AdminAnalyticsController::class, 'index'])->name('admin.analytics');
 
         // Company review & lifecycle management (permission: companies.review)
         Route::middleware('permission:companies.review')->group(function () {
@@ -155,9 +167,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 1. Candidate Portal
     Route::prefix('candidate')->name('api.candidate.')->group(function () {
-        // Profile
+        // Profile & Password
         Route::get('/profile', [CandidateProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [CandidateProfileController::class, 'update'])->name('profile.update');
+        Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
+
+        // Notifications
+        Route::get('/notifications', [CandidateProfileController::class, 'notifications'])->name('notifications.index');
+        Route::patch('/notifications/read-all', [CandidateProfileController::class, 'markAllNotificationsAsRead'])->name('notifications.read-all');
+        Route::patch('/notifications/{id}/read', [CandidateProfileController::class, 'markNotificationAsRead'])->name('notifications.read');
+
+        // Skills Management
+        Route::get('/skills', [CandidateSkillController::class, 'index'])->name('skills.index');
+        Route::post('/skills', [CandidateSkillController::class, 'sync'])->name('skills.sync');
 
         // CV Management
         Route::get('/cvs', [CandidateCvController::class, 'index'])->name('cvs.index');
@@ -178,6 +200,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/applications', [CandidateApplicationController::class, 'index'])->name('applications.index');
         Route::get('/applications/{id}', [CandidateApplicationController::class, 'show'])->name('applications.show');
         Route::delete('/applications/{id}/withdraw', [CandidateApplicationController::class, 'withdraw'])->name('applications.withdraw');
+
+        // Recommended Jobs (#12)
+        Route::get('/recommended-jobs', [CandidateRecommendedJobController::class, 'index'])->name('recommended-jobs.index');
+
+        // Saved Jobs (#13, #14, #15)
+        Route::get('/saved-jobs', [CandidateSavedJobController::class, 'index'])->name('saved-jobs.index');
+        Route::post('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'store'])->whereNumber('jobId')->name('saved-jobs.store');
+        Route::delete('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'destroy'])->whereNumber('jobId')->name('saved-jobs.destroy');
 
         // Available Interview Slots & Interviews
         Route::get('/available-slots', [CandidateAvailableSlotsController::class, 'index'])->name('available-slots');
@@ -241,6 +271,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::put('/jobs/{id}', [CompanyJobController::class, 'update'])->name('jobs.update');
         Route::patch('/jobs/{id}/status', [CompanyJobController::class, 'changeStatus'])->name('jobs.change-status');
         Route::delete('/jobs/{id}', [CompanyJobController::class, 'destroy'])->name('jobs.destroy');
+
+        // Published private jobs for approved members of this company only
+        Route::get('/internal-jobs', [CompanyJobController::class, 'internalIndex'])->name('internal-jobs.index');
+        Route::get('/internal-jobs/{id}', [CompanyJobController::class, 'internalShow'])->name('internal-jobs.show');
 
         // Job Interview Rounds CRUD (Package 3)
         Route::middleware('permission:interviews.assign')->group(function () {

@@ -33,13 +33,13 @@ class AssignUserRoleRequest extends FormRequest
                 return;
             }
 
-            // Platform-scoped roles cannot have a company_id
-            if ($role->scope === 'platform' && ! empty($this->input('company_id'))) {
+            // User-category roles cannot have a company_id
+            if (! $role->isCompanyRole() && ! empty($this->input('company_id'))) {
                 $validator->errors()->add('company_id', 'Platform-scoped roles cannot be associated with a company.');
             }
 
-            // Company-scoped roles require a company_id
-            if ($role->scope === 'company' && empty($this->input('company_id'))) {
+            // Company-category roles require a company_id
+            if ($role->isCompanyRole() && empty($this->input('company_id'))) {
                 $validator->errors()->add('company_id', 'Company-scoped roles require a valid company_id.');
             }
         });

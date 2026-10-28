@@ -32,7 +32,11 @@ class AdminCompanyResource extends JsonResource
                 'id'    => $this->reviewer->id,
                 'name'  => $this->reviewer->name,
                 'email' => $this->reviewer->email,
-            ] : null),
+            ] : ($this->whenLoaded('reviewerAdmin', fn () => $this->reviewerAdmin ? [
+                'id'    => $this->reviewerAdmin->id,
+                'name'  => $this->reviewerAdmin->name,
+                'email' => $this->reviewerAdmin->email,
+            ] : null))),
             'reviewed_at'       => $this->reviewed_at?->toIso8601String(),
             'jobs_count'        => $this->jobs_count ?? $this->jobs()->count(),
             'employees_count'   => $this->company_employees_count ?? $this->companyEmployees()->count(),

@@ -32,8 +32,8 @@ class ApproveEmployeeRequest extends FormRequest
                 return;
             }
 
-            // Must be a company-scoped role (hr, interviewer, employee)
-            if ($role->scope !== 'company') {
+            // Must be a company-category role (hr, interviewer, employee)
+            if (! $role->isCompanyRole()) {
                 $validator->errors()->add('role_id', 'Assigned role must have company scope (e.g., hr, interviewer, employee).');
             }
         });

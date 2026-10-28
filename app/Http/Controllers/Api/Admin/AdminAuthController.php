@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Resources\UserResource;
+use App\Http\Resources\Admin\AdminResource;
 use App\Models\AccountStatus;
-use App\Models\User;
+use App\Models\Admin;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -28,30 +28,33 @@ class AdminAuthController extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $request->email)
-            ->where('account_type', 'admin')
+        $admin = Admin::where('email', $request->email)
+            ->whereHas('roles', function ($query) {
+                $query->where('admin_roles.name', 'super_admin')
+                    ->where('admin_roles.scope', 'platform');
+            })
             ->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $admin || ! Hash::check($request->password, $admin->password)) {
             return response()->json([
                 'message' => 'Invalid credentials.',
             ], 401);
         }
 
-        if ($user->account_status_id !== AccountStatus::ACTIVE) {
+        if ($admin->account_status_id !== AccountStatus::ACTIVE) {
             return response()->json([
                 'message' => 'This admin account is inactive, suspended, or deleted.',
             ], 403);
         }
 
-        $token = $user->createToken('admin-api', ['admin'])->plainTextToken;
+        $token = $admin->createToken('admin-api', ['admin'])->plainTextToken;
 
         return response()->json([
             'message'      => 'Login successful.',
             'admin'        => [
-                'id'    => $user->id,
-                'name'  => $user->name,
-                'email' => $user->email,
+                'id'    => $admin->id,
+                'name'  => $admin->name,
+                'email' => $admin->email,
             ],
             'token_type'   => 'Bearer',
             'access_token' => $token,
@@ -61,15 +64,15 @@ class AdminAuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        $user = $request->user();
+        $admin = $request->user();
 
         return response()->json([
             'admin' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
+                'id' => $admin->id,
+                'name' => $admin->name,
+                'email' => $admin->email,
             ],
-            'user' => new UserResource($user->load(['roles.permissions', 'accountStatus'])),
+            'data' => new AdminResource($admin->load(['roles.permissions', 'accountStatus'])),
         ], 200);
     }
 
@@ -96,8 +99,8 @@ class AdminAuthController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // Use the default password broker, which stores users in the users table.
-        $status = Password::sendResetLink(
+        // Use the admins password broker, which stores platform admin accounts in admins.
+        $status = Password::broker('admins')->sendResetLink(
             $request->only('email')
         );
 
@@ -126,20 +129,20 @@ class AdminAuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $status = Password::reset(
+        $status = Password::broker('admins')->reset(
             $request->only(
                 'email',
                 'token',
                 'password',
                 'password_confirmation'
             ),
-            function (User $user, string $password) {
-                $user->forceFill([
+            function (Admin $admin, string $password) {
+                $admin->forceFill([
                     'password' => Hash::make($password),
                 ])->save();
 
                 // Revoke all existing Sanctum tokens after a password reset.
-                $user->tokens()->delete();
+                $admin->tokens()->delete();
             }
         );
 

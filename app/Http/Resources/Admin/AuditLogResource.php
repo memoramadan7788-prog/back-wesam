@@ -22,6 +22,11 @@ class AuditLogResource extends JsonResource
                 'name'  => $this->user->name,
                 'email' => $this->user->email,
             ] : null),
+            'admin'          => $this->whenLoaded('admin', fn () => $this->admin ? [
+                'id'    => $this->admin->id,
+                'name'  => $this->admin->name,
+                'email' => $this->admin->email,
+            ] : null),
             'old_values'     => $this->old_values,
             'new_values'     => $this->new_values,
             'reason'         => $this->reason,

@@ -34,6 +34,54 @@ class CompanyJobController extends Controller
     }
 
     /**
+     * GET /api/company/internal-jobs
+     *
+     * Published private jobs visible only to approved members of the
+     * authenticated user's company.
+     */
+    public function internalIndex(Request $request): AnonymousResourceCollection|JsonResponse
+    {
+        $companyId = $request->user()->resolveCompanyId();
+
+        if (! $companyId) {
+            return response()->json([
+                'message' => 'You are not associated with any company.',
+            ], 403);
+        }
+
+        $jobs = Job::query()
+            ->availableInternal($companyId, $request->user()->id)
+            ->with(['company', 'category', 'skills'])
+            ->withCount('applications')
+            ->orderByDesc('published_at')
+            ->paginate(15);
+
+        return CompanyJobResource::collection($jobs);
+    }
+
+    /**
+     * GET /api/company/internal-jobs/{id}
+     */
+    public function internalShow(Request $request, int $id): CompanyJobResource|JsonResponse
+    {
+        $companyId = $request->user()->resolveCompanyId();
+
+        if (! $companyId) {
+            return response()->json([
+                'message' => 'You are not associated with any company.',
+            ], 403);
+        }
+
+        $job = Job::query()
+            ->availableInternal($companyId, $request->user()->id)
+            ->with(['company', 'category', 'skills'])
+            ->withCount('applications')
+            ->findOrFail($id);
+
+        return new CompanyJobResource($job);
+    }
+
+    /**
      * POST /api/company/jobs
      *
      * company_id is auto-resolved from the authenticated user (Phase 0.1).
@@ -64,6 +112,11 @@ class CompanyJobController extends Controller
         $validated['company_id'] = $companyId;
         $validated['created_by'] = $user->id;
         $validated['status'] = $validated['status'] ?? 'published';
+        if (($validated['visibility'] ?? 'public') === 'private') {
+            $validated['private_apply_mode'] ??= 'all_employees';
+        } else {
+            $validated['private_apply_mode'] = null;
+        }
         if ($validated['status'] === 'published') {
             $validated['published_at'] = now();
         }
@@ -135,6 +188,12 @@ class CompanyJobController extends Controller
 
         $skills = $validated['skills'] ?? null;
         unset($validated['skills']);
+
+        if (($validated['visibility'] ?? $job->visibility) === 'private') {
+            $validated['private_apply_mode'] ??= $job->private_apply_mode ?: 'all_employees';
+        } else {
+            $validated['private_apply_mode'] = null;
+        }
 
         DB::transaction(function () use ($job, $validated, $skills) {
             $job->update($validated);

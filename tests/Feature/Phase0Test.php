@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\AccountStatus;
+use App\Models\Admin;
+use App\Models\AdminRole;
 use App\Models\Application;
 use App\Models\CandidateCv;
 use App\Models\CandidateProfile;
@@ -231,12 +233,19 @@ class Phase0Test extends TestCase
 
     // ─── 0.5: Admin login uses users table ───────────────────────────
 
-    public function test_admin_login_uses_users_table(): void
+    public function test_admin_login_uses_dedicated_admins_table(): void
     {
-        $admin = User::factory()->create([
-            'account_type' => 'admin',
+        $admin = Admin::create([
+            'name'         => 'Super Admin',
+            'email'        => 'phase0-admin@example.com',
             'password'     => bcrypt('AdminPass123!'),
+            'account_status_id' => AccountStatus::ACTIVE,
         ]);
+        $superAdminRole = AdminRole::create([
+            'name' => 'super_admin',
+            'scope' => 'platform',
+        ]);
+        $admin->roles()->attach($superAdminRole->id, ['assigned_at' => now()]);
 
         $response = $this->postJson('/api/admin/login', [
             'email'    => $admin->email,

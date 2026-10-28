@@ -69,4 +69,10 @@ class CandidateProfile extends Model
     {
         return $this->belongsToMany(Skill::class, 'candidate_skills', 'candidate_id', 'skill_id')->withPivot('level');
     }
+
+    public function savedJobs(): BelongsToMany
+    {
+        return $this->belongsToMany(Job::class, 'candidate_saved_jobs', 'candidate_id', 'job_id')
+            ->withTimestamps();
+    }
 }

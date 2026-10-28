@@ -3,6 +3,8 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\AccountStatus;
+use App\Models\Admin;
+use App\Models\AdminRole;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -104,10 +106,17 @@ class UserAuthTest extends TestCase
 
     public function test_admin_and_regular_login_use_access_token_as_canonical_key_and_keep_token_alias(): void
     {
-        $admin = User::factory()->create([
-            'account_type' => 'admin',
+        $admin = Admin::create([
             'email'        => 'admin@example.com',
+            'name'         => 'Super Admin',
             'password'     => bcrypt('secret123'),
+            'account_status_id' => AccountStatus::ACTIVE,
+        ]);
+        $admin->roles()->attach(AdminRole::create([
+            'name' => 'super_admin',
+            'scope' => 'platform',
+        ])->id, [
+            'assigned_at' => now(),
         ]);
 
         $adminResponse = $this->postJson('/api/admin/login', [
@@ -133,6 +142,24 @@ class UserAuthTest extends TestCase
         $userResponse->assertStatus(200);
         $userResponse->assertJsonStructure(['access_token', 'token', 'token_type']);
         $this->assertSame($userResponse->json('token'), $userResponse->json('access_token'));
+    }
+
+    public function test_admin_without_super_admin_role_cannot_use_admin_login(): void
+    {
+        $admin = Admin::create([
+            'email'        => 'admin-without-role@example.com',
+            'name'         => 'Admin Without Role',
+            'password'     => bcrypt('secret123'),
+            'account_status_id' => AccountStatus::ACTIVE,
+        ]);
+
+        $response = $this->postJson('/api/admin/login', [
+            'email'    => $admin->email,
+            'password' => 'secret123',
+        ]);
+
+        $response->assertStatus(401);
+        $response->assertJson(['message' => 'Invalid credentials.']);
     }
 
     public function test_blocked_user_cannot_login(): void
