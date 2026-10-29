@@ -969,6 +969,38 @@ The route audit treats `GET` plus its implicit `HEAD` method as one documented e
 
 ---
 
+## 4. Contact Us / Support Messages (K)
+
+### Visitor or registered user: `POST /api/contact`
+
+Required body:
+
+```json
+{
+  "title": "Cannot register",
+  "description": "I cannot complete registration."
+}
+```
+
+- Guest users must also send `name` and `email`.
+- Authenticated users may omit them; the API takes the authoritative `name`, `email`, and `user_id` from the authenticated account in the `users` table. Client-supplied identity values are ignored.
+- Success is `201` and returns the created message under `data` with initial status `new`.
+
+### Super Admin management
+
+These routes require a Sanctum token for the dedicated Super Admin from the `admins` table. A regular user, company admin, legacy admin, or non-Super-Admin platform admin receives `403`.
+
+| Method | Endpoint | Body / result |
+|---|---|---|
+| `GET` | `/api/super-admin/contact-messages` | List; optional `status`, `email`, `per_page` filters |
+| `GET` | `/api/super-admin/contact-messages/{id}` | View title, description, sender snapshot, user id, and status |
+| `PATCH` | `/api/super-admin/contact-messages/{id}/status` | `status`: `new`, `in_progress`, `resolved`, or `closed`; optional `admin_note` |
+| `DELETE` | `/api/super-admin/contact-messages/{id}` | Soft-deletes the message |
+
+The sender name/email are stored as a snapshot so a guest can be followed up even without a `users.id`, while `user_id` is populated for registered users.
+
+---
+
 ## 5. Live Testing in Browser
 The entire frontend team can test every single button and payload live right now:
 1. Start the server: `php artisan serve`

@@ -178,6 +178,7 @@ TOTAL: 138 passed (629 assertions) | 0 failures | 100% Success Rate
 1. **Part H (Company / HR):** تمت إضافة عقد مسارات لوحة الشركة والـ ATS: dashboard، job publication/checklist/overview، hiring team، فلاتر وتجميع التطبيقات، bulk/export/manual candidate، notes/assignment/decision، interview calendar/conflicts/slots/edit/evaluations، offer approval، talent pool، analytics، invitations، roles، workspace، وتوثيقها في `FRONTEND_INTEGRATION_AND_WORKFLOW_GUIDE.md`.
 2. **العزل:** كل المسارات الجديدة تعتمد على `resolveCompanyId()` أو تتحقق من job/application company قبل القراءة أو التعديل، ولا تسمح بإدارة بيانات شركة أخرى.
 3. **حالة الـ ATS:** تظل قيم قاعدة البيانات `submitted`, `screening`, `shortlisted`, `interviewing`, `offered`, `hired`, `rejected`، مع mapping للواجهة: Applied, Screening, Interview, Offer, Hired.
+4. **Contact Us (K):** تمت إضافة `contact_messages`؛ الضيف يرسل `name` و`email`، والمستخدم المسجل يُربط تلقائيًا بـ `users.id` مع حفظ snapshot للاسم والبريد. إدارة الرسائل متاحة للـ Super Admin فقط عبر `/api/super-admin/contact-messages`.
 2. **الاعتمادية:** كافة المسارات محمية بالتحقق الصارم من المدخلات (Form Requests) والصلاحيات لمنع ثغرات الـ IDOR والوصول غير المصرح به.
 3. **التوثيق:** يمكن استعراض هذه المسارات وتجربتها بشكل تفاعلي عبر Swagger على الرابط:
    `http://127.0.0.1:8000/docs/api`

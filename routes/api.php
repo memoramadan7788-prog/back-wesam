@@ -44,6 +44,7 @@ use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Api\Admin\CompanyDetailsController;
 use App\Http\Controllers\Api\Company\CompanyProfileController;
 use App\Http\Controllers\Api\Company\CompanyHrController;
+use App\Http\Controllers\Api\ContactMessageController;
 use App\Http\Controllers\Api\PublicCompanyController;
 use App\Http\Controllers\Api\PublicFeaturedController;
 
@@ -134,6 +135,17 @@ Route::prefix('auth')->group(function () {
 // Compatibility reset-password path used by the company frontend.
 Route::post('/company/reset-password', [UserAuthController::class, 'resetPassword'])
     ->name('api.company.password.reset');
+
+// Contact us is public for visitors; authenticated users are identified from users.
+Route::post('/contact', [ContactMessageController::class, 'store'])->name('contact.store');
+
+// Contact messages are visible only to a dedicated platform Super Admin.
+Route::prefix('super-admin')->name('super-admin.')->middleware(['auth:sanctum', 'admin', 'super-admin'])->group(function () {
+    Route::get('/contact-messages', [ContactMessageController::class, 'index'])->name('contact-messages.index');
+    Route::get('/contact-messages/{id}', [ContactMessageController::class, 'show'])->whereNumber('id')->name('contact-messages.show');
+    Route::patch('/contact-messages/{id}/status', [ContactMessageController::class, 'updateStatus'])->whereNumber('id')->name('contact-messages.status');
+    Route::delete('/contact-messages/{id}', [ContactMessageController::class, 'destroy'])->whereNumber('id')->name('contact-messages.destroy');
+});
 
 /*
 |--------------------------------------------------------------------------
