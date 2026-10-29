@@ -43,6 +43,7 @@ use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Api\Admin\CompanyDetailsController;
 use App\Http\Controllers\Api\Company\CompanyProfileController;
+use App\Http\Controllers\Api\Company\CompanyHrController;
 use App\Http\Controllers\Api\PublicCompanyController;
 use App\Http\Controllers\Api\PublicFeaturedController;
 
@@ -299,6 +300,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/offers', [OfferController::class, 'candidateOffers'])->name('offers.index');
         Route::post('/offers/{id}/accept', [OfferController::class, 'accept'])->name('offers.accept');
         Route::post('/offers/{id}/reject', [OfferController::class, 'reject'])->name('offers.reject');
+        Route::post('/offers/{id}/question', [CompanyHrController::class, 'askOfferQuestion'])->name('offers.question');
     });
 
     // 2. Candidate Job Application Action
@@ -332,6 +334,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 4. Company HR & Employer Portal
     Route::prefix('company')->name('api.company.')->middleware('company.active')->group(function () {
+        Route::get('/dashboard', [CompanyHrController::class, 'dashboard'])->name('dashboard');
         // Candidate/company exam discovery and details.
         Route::get('/exams', [CompanyExamController::class, 'index'])->name('exams.index');
         Route::get('/exams/{id}', [CompanyExamController::class, 'show'])->name('exams.show');
@@ -359,6 +362,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/jobs', [CompanyJobController::class, 'store'])->name('jobs.store');
         Route::get('/jobs/{id}', [CompanyJobController::class, 'show'])->name('jobs.show');
         Route::put('/jobs/{id}', [CompanyJobController::class, 'update'])->name('jobs.update');
+        Route::post('/jobs/{id}/publish', [CompanyHrController::class, 'publish'])->name('jobs.publish');
+        Route::get('/jobs/{id}/publication-checklist', [CompanyHrController::class, 'publicationChecklist'])->name('jobs.publication-checklist');
+        Route::get('/jobs/{id}/overview', [CompanyHrController::class, 'overview'])->name('jobs.overview');
+        Route::get('/jobs/{id}/hiring-team', [CompanyHrController::class, 'hiringTeam'])->name('jobs.hiring-team.index');
+        Route::post('/jobs/{id}/hiring-team', [CompanyHrController::class, 'addHiringTeam'])->name('jobs.hiring-team.store');
+        Route::delete('/jobs/{id}/hiring-team/{userId}', [CompanyHrController::class, 'removeHiringTeam'])->name('jobs.hiring-team.destroy');
         Route::patch('/jobs/{id}/status', [CompanyJobController::class, 'changeStatus'])->name('jobs.change-status');
         Route::delete('/jobs/{id}', [CompanyJobController::class, 'destroy'])->name('jobs.destroy');
 
@@ -379,11 +388,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/applications/{id}/interviews', [CompanyInterviewController::class, 'store'])->name('interviews.store');
         Route::get('/applications/{id}/interviews', [CompanyInterviewController::class, 'applicationInterviews'])->name('applications.interviews.index');
         Route::get('/interviews', [CompanyInterviewController::class, 'index'])->name('interviews.index');
+        Route::get('/interviews/calendar', [CompanyHrController::class, 'calendar'])->name('interviews.calendar');
+        Route::post('/interviews/check-conflicts', [CompanyHrController::class, 'checkConflicts'])->name('interviews.check-conflicts');
+        Route::put('/interviews/{id}', [CompanyHrController::class, 'updateInterview'])->name('interviews.update');
         Route::post('/interviews/{id}/cancel', [CompanyInterviewController::class, 'cancel'])->name('interviews.cancel');
 
         // Applications Management (ATS Pipeline)
         Route::get('/jobs/{jobId}/applications', [CompanyApplicationController::class, 'index'])->name('applications.index');
+        Route::post('/jobs/{jobId}/applications', [CompanyHrController::class, 'addApplication'])->name('applications.store');
+        Route::get('/jobs/{jobId}/applications/export', [CompanyHrController::class, 'exportApplications'])->name('applications.export');
+        Route::patch('/applications/bulk', [CompanyHrController::class, 'bulkApplications'])->name('applications.bulk');
         Route::get('/applications/{id}', [CompanyApplicationController::class, 'show'])->name('applications.show');
+        Route::get('/applications/{id}/notes', [CompanyHrController::class, 'notes'])->name('applications.notes.index');
+        Route::post('/applications/{id}/notes', [CompanyHrController::class, 'notes'])->name('applications.notes.store');
+        Route::patch('/applications/{id}/assign', [CompanyHrController::class, 'assignApplication'])->name('applications.assign');
+        Route::get('/applications/{id}/available-slots', [CompanyHrController::class, 'availableSlots'])->name('applications.available-slots');
+        Route::get('/applications/{id}/evaluations', [CompanyHrController::class, 'evaluations'])->name('applications.evaluations');
+        Route::post('/applications/{id}/decision', [CompanyHrController::class, 'decision'])->name('applications.decision.store');
+        Route::patch('/applications/{id}/decision', [CompanyHrController::class, 'decision'])->name('applications.decision.update');
         Route::patch('/applications/{id}/status', [CompanyApplicationController::class, 'updateStatus'])->name('applications.update-status');
 
         // Exams Management
@@ -393,10 +415,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Offers Management
         Route::post('/offers', [OfferController::class, 'store'])->name('offers.store');
+        Route::post('/offers/{id}/request-approval', [CompanyHrController::class, 'offerAction'])->defaults('action', 'request-approval')->name('offers.request-approval');
+        Route::post('/offers/{id}/approve', [CompanyHrController::class, 'offerAction'])->defaults('action', 'approve')->name('offers.approve');
+        Route::post('/offers/{id}/send', [CompanyHrController::class, 'offerAction'])->defaults('action', 'send')->name('offers.send');
+        Route::get('/offer-templates', [CompanyHrController::class, 'offerTemplates'])->name('offer-templates.index');
+        Route::get('/talent-pool', [CompanyHrController::class, 'talentPool'])->name('talent-pool.index');
+        Route::post('/talent-pool', [CompanyHrController::class, 'talentPool'])->name('talent-pool.store');
+        Route::patch('/talent-pool/{id}', [CompanyHrController::class, 'talentPoolItem'])->name('talent-pool.update');
+        Route::patch('/talent-pool/{id}/tags', [CompanyHrController::class, 'talentPoolItem'])->name('talent-pool.tags.update');
+        Route::delete('/talent-pool/{id}', [CompanyHrController::class, 'talentPoolItem'])->name('talent-pool.destroy');
+        Route::get('/analytics', [CompanyHrController::class, 'analytics'])->name('analytics.index');
+        Route::get('/analytics/export', [CompanyHrController::class, 'analyticsExport'])->name('analytics.export');
+        Route::get('/invitations', [CompanyHrController::class, 'invitations'])->name('invitations.index');
+        Route::post('/invitations', [CompanyHrController::class, 'invitations'])->name('invitations.store');
+        Route::delete('/invitations/{id}', [CompanyHrController::class, 'deleteInvitation'])->name('invitations.destroy');
+        Route::get('/roles', [CompanyHrController::class, 'roles'])->name('roles.index');
+        Route::put('/employees/{id}/role', [CompanyHrController::class, 'employeeRole'])->name('employees.role.update');
+        Route::get('/workspace', [CompanyHrController::class, 'workspace'])->name('workspace.show');
+        Route::put('/workspace', [CompanyHrController::class, 'workspace'])->name('workspace.update');
     });
 
     // 5. Shared Offer Details
     Route::get('/offers/{id}', [OfferController::class, 'show'])->name('offers.show');
+    Route::get('/offers/{id}/documents', [CompanyHrController::class, 'offerDocuments'])->name('offers.documents.index');
+    Route::post('/offers/{id}/documents', [CompanyHrController::class, 'offerDocuments'])->name('offers.documents.store');
+    Route::post('/offers/{id}/sign', [CompanyHrController::class, 'signOffer'])->name('offers.sign');
 
     // 6. Interview Scheduling & Evaluations (HR / Admin)
     Route::prefix('interviews')->name('api.interviews.')->group(function () {

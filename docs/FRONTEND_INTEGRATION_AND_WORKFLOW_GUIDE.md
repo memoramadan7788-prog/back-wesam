@@ -615,6 +615,29 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
     ```
   - **Success Action (201):** Offer sent to candidate portal, application moves to `offered`.
 
+#### Company HR contract additions (Part H)
+
+All routes below require a Bearer token and an approved company context. A platform admin must send `company_id` (query/body/header `X-Company-Id`). Non-admin company users are always scoped to their own company.
+
+| Frontend need | Endpoint | Response/notes |
+|---|---|---|
+| Company dashboard | `GET /api/company/dashboard` | `data.kpis`, `active_requisitions`, `pipeline_needs_attention`, `todays_priorities`, `next_interview`, `sourcing_overview` |
+| Job management | `GET /api/company/jobs?tab=open\|draft\|closed\|all&owner_id=&hiring_model=&search=` | `data` paginated; each job includes `requisition_code`, `hiring_model`, `requirements`, `benefits`, pipeline count |
+| Publish/checklist/overview | `GET /api/company/jobs/{id}/publication-checklist`, `POST /api/company/jobs/{id}/publish`, `GET /api/company/jobs/{id}/overview` | Publish returns `422` with failed checks; overview returns `stage_counts`, `hiring_team`, `publication` |
+| Hiring team | `GET/POST/DELETE /api/company/jobs/{id}/hiring-team` | POST body: `user_id`, `role`; only approved company employees may be added |
+| ATS Kanban | `GET /api/company/jobs/{jobId}/applications?status=&source=&owner_id=&search=` | `data` paginated and `meta.stage_counts`; status labels are Applied/Screening/Interview/Offer/Hired |
+| Bulk/export/manual candidate | `PATCH /api/company/applications/bulk`, `GET /api/company/jobs/{jobId}/applications/export`, `POST /api/company/jobs/{jobId}/applications` | Bulk body: `application_ids[]`, optional `status`, `owner_id`; export is CSV; manual body includes `candidate_id` |
+| Candidate workflow | `GET/POST /api/company/applications/{id}/notes`, `PATCH /assign`, `POST/PATCH /decision`, existing `PATCH /status` | Decisions: `proceed_to_offer`, `hold`, `reject`; invalid stage transitions return `409` |
+| Interview operations | `GET /api/company/interviews/calendar?from=&to=`, `GET /api/company/applications/{id}/available-slots`, `POST /api/company/interviews/check-conflicts`, `PUT /api/company/interviews/{id}` | Conflict response: `data.has_conflict`; all records are company-scoped |
+| Offers | `POST /api/company/offers/{id}/request-approval`, `/approve`, `/send`; `GET /api/company/offer-templates` | Sending requires `approval_status=approved` unless approval is not required |
+| Offer documents | `GET/POST /api/offers/{id}/documents`, `POST /api/offers/{id}/sign`, `POST /api/candidate/offers/{id}/question` | Candidate question is restricted to the offer owner |
+| Talent pool | `GET/POST /api/company/talent-pool`, `PATCH/DELETE /api/company/talent-pool/{id}` | Company-owned prospects with `tags`, `source`, `relationship`, `consent_at` |
+| Analytics | `GET /api/company/analytics?from=&to=&job=&source=`, `GET /api/company/analytics/export` | Summary includes stage distribution and source performance |
+| Invitations/roles | `GET/POST/DELETE /api/company/invitations`, `GET /api/company/roles`, `PUT /api/company/employees/{id}/role` | Invitation body: `email`, optional `role_id` |
+| Workspace | `GET/PUT /api/company/workspace` | Stores display name, slug, size, timezone, headquarters, setup status and onboarding steps |
+
+Job create/update also accepts `requirements`, `benefits[]`, `requisition_owner_id`, `hiring_manager_id`, `hiring_model`, `allow_agency_submissions`, `publish_to_search`, `requisition_code`, and `screening_questions[]`. The canonical application stages remain `submitted`, `screening`, `shortlisted`, `interviewing`, `offered`, `hired`, `rejected`; the UI labels map to Applied, Screening, Interview, Offer, Hired.
+
 #### Screen 19: Create Assessment Exam (`/company/exams/create`)
 - **Event: Page Load / Exam Details**
   - **List:** `GET /api/company/exams`

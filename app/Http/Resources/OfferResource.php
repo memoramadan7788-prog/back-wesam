@@ -25,6 +25,14 @@ class OfferResource extends JsonResource
             'sent_at'        => $this->sent_at?->toIso8601String(),
             'responded_at'   => $this->responded_at?->toIso8601String(),
             'expires_at'     => $this->expires_at?->toIso8601String(),
+            'bonus'          => $this->bonus !== null ? (float) $this->bonus : null,
+            'equity'         => $this->equity !== null ? (float) $this->equity : null,
+            'additional_terms' => $this->additional_terms ?? [],
+            'employment_type' => $this->employment_type,
+            'work_model' => $this->work_model,
+            'candidate_message' => $this->candidate_message,
+            'require_esignature' => (bool) $this->require_esignature,
+            'approval_status' => $this->approval_status,
         ];
     }
 }

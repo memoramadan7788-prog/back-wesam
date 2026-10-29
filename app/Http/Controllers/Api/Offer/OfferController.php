@@ -24,10 +24,13 @@ class OfferController extends Controller
     {
         $validated = $request->validated();
         $application = Application::findOrFail($validated['application_id']);
+        $companyId = $request->user()->resolveCompanyId();
+        abort_unless($companyId && (int) $application->job()->value('company_id') === (int) $companyId, 403, 'This application does not belong to your company.');
 
         $validated['sent_by'] = $request->user()->id;
-        $validated['status'] = 'sent';
-        $validated['sent_at'] = now();
+        $validated['status'] = $validated['status'] ?? 'sent';
+        $validated['approval_status'] = 'not_required';
+        $validated['sent_at'] = $validated['status'] === 'sent' ? now() : null;
 
         $offer = DB::transaction(function () use ($validated, $application, $request) {
             $offer = Offer::create($validated);

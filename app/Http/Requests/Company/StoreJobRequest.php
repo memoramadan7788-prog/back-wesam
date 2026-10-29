@@ -40,6 +40,21 @@ class StoreJobRequest extends FormRequest
             'visibility'       => ['nullable', Rule::in(['public', 'private'])],
             'private_apply_mode' => ['nullable', Rule::in(['all_employees', 'nominated_only'])],
             'skills'           => ['nullable', 'array'],
+            'requirements'     => ['nullable', 'string', 'max:20000'],
+            'benefits'         => ['nullable', 'array'],
+            'benefits.*'       => ['string', 'max:255'],
+            'requisition_owner_id' => ['nullable', 'integer', 'exists:users,id'],
+            'hiring_manager_id' => ['nullable', 'integer', 'exists:users,id'],
+            'hiring_model'     => ['nullable', Rule::in(['direct', 'agency'])],
+            'allow_agency_submissions' => ['nullable', 'boolean'],
+            'publish_to_search' => ['nullable', 'boolean'],
+            'requisition_code' => ['nullable', 'string', 'max:100'],
+            'status'           => ['nullable', Rule::in(['draft', 'published', 'closed', 'archived'])],
+            'screening_questions' => ['nullable', 'array'],
+            'screening_questions.*.question' => ['required_with:screening_questions', 'string', 'max:2000'],
+            'screening_questions.*.type' => ['nullable', 'string', 'max:30'],
+            'screening_questions.*.options' => ['nullable', 'array'],
+            'screening_questions.*.is_required' => ['nullable', 'boolean'],
         ];
     }
 }

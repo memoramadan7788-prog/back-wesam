@@ -31,14 +31,24 @@ class CompanyApplicationController extends Controller
         }
 
         $status = $request->query('status');
+        $source = $request->query('source');
+        $ownerId = $request->query('owner_id');
+        $search = $request->query('search');
 
         $applications = Application::with(['candidateProfile.user', 'job.company'])
             ->where('job_id', $job->id)
             ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($source, fn ($q) => $q->where('source', $source))
+            ->when($ownerId, fn ($q) => $q->where('owner_id', $ownerId))
+            ->when($search, fn ($q) => $q->where(function ($w) use ($search) {
+                $w->whereHas('candidateProfile.user', fn ($u) => $u->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"))
+                    ->orWhereHas('candidateProfile', fn ($p) => $p->where('headline', 'like', "%{$search}%"));
+            }))
             ->orderByDesc('applied_at')
             ->paginate(20);
 
-        return ApplicationResource::collection($applications);
+        $grouped = Application::where('job_id', $job->id)->select('status', DB::raw('count(*) as total'))->groupBy('status')->pluck('total', 'status');
+        return ApplicationResource::collection($applications)->additional(['meta' => ['stage_counts' => $grouped]]);
     }
 
     /**
@@ -83,7 +93,8 @@ class CompanyApplicationController extends Controller
         $validated = $request->validated();
 
         $oldStatus = $application->status;
-        $newStatus = $validated['status'];
+        $stageMap = ['applied' => 'submitted', 'screening' => 'screening', 'interview' => 'interviewing', 'offer' => 'offered', 'hired' => 'hired'];
+        $newStatus = $stageMap[$validated['status']] ?? $validated['status'];
 
         // Stage transition state machine
         $allowedTransitions = [

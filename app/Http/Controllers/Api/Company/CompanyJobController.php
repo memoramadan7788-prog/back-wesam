@@ -9,6 +9,7 @@ use App\Http\Requests\Company\UpdateJobRequest;
 use App\Http\Resources\CompanyJobResource;
 use App\Models\Company;
 use App\Models\Job;
+use App\Models\JobScreeningQuestion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -24,9 +25,13 @@ class CompanyJobController extends Controller
         $user = $request->user();
         $companyId = $user->resolveCompanyId();
 
-        $jobs = Job::with(['company', 'category', 'skills'])
+        $jobs = Job::with(['company', 'category', 'skills', 'requisitionOwner', 'hiringManager'])
             ->withCount('applications')
             ->when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->when($request->filled('tab'), fn ($q) => $q->where('status', $request->input('tab') === 'all' ? '!=__none__' : $request->input('tab')))
+            ->when($request->filled('owner_id'), fn ($q) => $q->where('requisition_owner_id', $request->input('owner_id')))
+            ->when($request->filled('hiring_model'), fn ($q) => $q->where('hiring_model', $request->input('hiring_model')))
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($x) => $x->where('title', 'like', '%'.$request->input('search').'%')->orWhere('requisition_code', 'like', '%'.$request->input('search').'%')))
             ->orderByDesc('created_at')
             ->paginate(15);
 
@@ -91,7 +96,9 @@ class CompanyJobController extends Controller
     {
         $validated = $request->validated();
         $skills = $validated['skills'] ?? [];
+        $screeningQuestions = $validated['screening_questions'] ?? [];
         unset($validated['skills']);
+        unset($validated['screening_questions']);
 
         $user = $request->user();
         $companyId = $user->resolveCompanyId();
@@ -133,10 +140,20 @@ class CompanyJobController extends Controller
             }
         }
 
-        $job = DB::transaction(function () use ($validated, $syncSkills) {
+        $job = DB::transaction(function () use ($validated, $syncSkills, $screeningQuestions) {
             $job = Job::create($validated);
             if (! empty($syncSkills)) {
                 $job->skills()->sync($syncSkills);
+            }
+            foreach ($screeningQuestions as $index => $question) {
+                JobScreeningQuestion::create([
+                    'job_id' => $job->id,
+                    'question' => $question['question'],
+                    'type' => $question['type'] ?? 'text',
+                    'options' => $question['options'] ?? null,
+                    'is_required' => $question['is_required'] ?? true,
+                    'sort_order' => $index,
+                ]);
             }
             return $job;
         });
@@ -187,7 +204,9 @@ class CompanyJobController extends Controller
         $validated = $request->validated();
 
         $skills = $validated['skills'] ?? null;
+        $screeningQuestions = $validated['screening_questions'] ?? null;
         unset($validated['skills']);
+        unset($validated['screening_questions']);
 
         if (($validated['visibility'] ?? $job->visibility) === 'private') {
             $validated['private_apply_mode'] ??= $job->private_apply_mode ?: 'all_employees';
@@ -195,10 +214,23 @@ class CompanyJobController extends Controller
             $validated['private_apply_mode'] = null;
         }
 
-        DB::transaction(function () use ($job, $validated, $skills) {
+        DB::transaction(function () use ($job, $validated, $skills, $screeningQuestions) {
             $job->update($validated);
             if ($skills !== null) {
                 $job->skills()->sync($skills);
+            }
+            if ($screeningQuestions !== null) {
+                $job->screeningQuestions()->delete();
+                foreach ($screeningQuestions as $index => $question) {
+                    JobScreeningQuestion::create([
+                        'job_id' => $job->id,
+                        'question' => $question['question'],
+                        'type' => $question['type'] ?? 'text',
+                        'options' => $question['options'] ?? null,
+                        'is_required' => $question['is_required'] ?? true,
+                        'sort_order' => $index,
+                    ]);
+                }
             }
         });
 

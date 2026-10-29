@@ -24,6 +24,9 @@ class Job extends Model
         'deadline' => 'datetime',
         'published_at' => 'datetime',
         'closed_at' => 'datetime',
+        'benefits' => 'array',
+        'allow_agency_submissions' => 'boolean',
+        'publish_to_search' => 'boolean',
     ];
 
     public function company(): BelongsTo
@@ -39,6 +42,16 @@ class Job extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function requisitionOwner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requisition_owner_id');
+    }
+
+    public function hiringManager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'hiring_manager_id');
     }
 
     public function jobInterviewRounds(): HasMany
