@@ -25,8 +25,10 @@ class JobIndexRequest extends FormRequest
 
             // Filters
             'location'        => ['nullable', 'string', 'max:100'],
-            'employment_type' => ['nullable', 'string', 'max:50', 'regex:/^[A-Za-z0-9_\- ]+$/'],
-            'work_mode'       => ['nullable', Rule::in(['onsite', 'remote', 'hybrid'])],
+            'employment_type' => ['nullable', 'array', 'max:10'],
+            'employment_type.*' => ['string', 'max:50', 'regex:/^[A-Za-z0-9_\- ]+$/'],
+            'work_mode'       => ['nullable', 'array', 'max:3'],
+            'work_mode.*'     => [Rule::in(['onsite', 'remote', 'hybrid'])],
             'company_id'      => ['nullable', 'integer', 'min:1'],
             'category_id'     => ['nullable', 'integer', 'min:1'],
             'skills'          => ['nullable', 'array', 'max:10'],
@@ -47,14 +49,41 @@ class JobIndexRequest extends FormRequest
         ];
     }
 
+    protected function prepareForValidation(): void
+    {
+        $data = [];
+
+        foreach (['employment_type', 'work_mode'] as $field) {
+            if ($this->filled($field) && ! is_array($this->input($field))) {
+                $data[$field] = [$this->input($field)];
+            }
+        }
+
+        if (! $this->filled('category_id') && $this->filled('discipline')) {
+            $data['category_id'] = $this->input('discipline');
+        }
+
+        if ($data !== []) {
+            $this->merge($data);
+        }
+    }
+
     /**
      * Force JSON 422 validation response even if Accept header is missing.
      */
     protected function failedValidation(Validator $validator): void
     {
+        $errors = $validator->errors()->toArray();
+        foreach (['employment_type', 'work_mode'] as $field) {
+            $nestedKey = collect(array_keys($errors))->first(fn (string $key) => str_starts_with($key, $field . '.'));
+            if ($nestedKey && ! isset($errors[$field])) {
+                $errors[$field] = $errors[$nestedKey];
+            }
+        }
+
         throw new HttpResponseException(response()->json([
             'message' => 'The given data was invalid.',
-            'errors'  => $validator->errors(),
+            'errors'  => $errors,
         ], 422));
     }
 }

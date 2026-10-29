@@ -23,6 +23,8 @@ class Company extends Model
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'benefits' => 'array',
+        'locations' => 'array',
     ];
 
     public function accountStatus(): BelongsTo

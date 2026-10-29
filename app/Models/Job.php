@@ -90,7 +90,8 @@ class Job extends Model
         'jobs.employment_type', 'jobs.salary_min', 'jobs.salary_max',
         'jobs.currency', 'jobs.salary_period', 'jobs.experience_years',
         'jobs.department', 'jobs.openings_count', 'jobs.deadline',
-        'jobs.published_at',
+        'jobs.published_at', 'jobs.updated_at', 'jobs.requisition_code',
+        'jobs.hiring_model',
     ];
 
     public function scopeAvailable(Builder $query): Builder
@@ -150,8 +151,8 @@ class Job extends Model
                 'company', fn (Builder $c) => $c->where('name', 'like', self::likeTerm($v))
             ))
             ->when($f['location'] ?? null, fn (Builder $q, string $v) => $q->where('jobs.location', 'like', self::likeTerm($v)))
-            ->when($f['employment_type'] ?? null, fn (Builder $q, string $v) => $q->where('jobs.employment_type', $v))
-            ->when($f['work_mode'] ?? null, fn (Builder $q, string $v) => $q->where('jobs.work_mode', $v))
+            ->when($f['employment_type'] ?? null, fn (Builder $q, array $v) => $q->whereIn('jobs.employment_type', $v))
+            ->when($f['work_mode'] ?? null, fn (Builder $q, array $v) => $q->whereIn('jobs.work_mode', $v))
             ->when($f['company_id'] ?? null, fn (Builder $q, $v) => $q->where('jobs.company_id', $v))
             ->when($f['category_id'] ?? null, fn (Builder $q, $v) => $q->where('jobs.category_id', $v))
             ->when($f['skills'] ?? null, fn (Builder $q, array $ids) => $q->whereHas(

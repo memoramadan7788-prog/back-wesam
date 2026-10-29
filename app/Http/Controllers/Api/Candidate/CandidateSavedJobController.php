@@ -24,16 +24,32 @@ class CandidateSavedJobController extends Controller
 
         $perPage = min(max((int) $request->input('per_page', 15), 1), 50);
 
-        $savedJobs = $candidate->savedJobs()
+        $query = $candidate->savedJobs()
             ->select(Job::PUBLIC_COLUMNS)
             ->with([
-                'company:id,name,industry,website,logo_path',
+                'company:id,name,industry,website,logo_path,description,culture,benefits,locations,contact_email,owner_user_id',
+                'company.owner:id,name,email',
                 'category:id,name',
                 'skills' => fn ($q) => $q->select('skills.id', 'skills.name', 'skills.type'),
             ])
-            ->orderByPivot('created_at', 'desc')
+            ->when($request->filled('work_model'), fn ($query) => $query->where('jobs.work_mode', $request->string('work_model')->toString()))
+            ->when($request->input('sort') === 'updated_desc', fn ($query) => $query->orderByDesc('jobs.updated_at'))
+            ->when($request->input('sort') === 'title_asc', fn ($query) => $query->orderBy('jobs.title'))
+            ->when(! in_array($request->input('sort'), ['updated_desc', 'title_asc'], true), fn ($query) => $query->orderBy('candidate_saved_jobs.created_at', 'desc'));
+
+        $savedJobs = $query
             ->paginate($perPage)
             ->withQueryString();
+
+        foreach ($savedJobs->getCollection() as $job) {
+            $savedAt = $job->pivot?->created_at;
+            $updated = $savedAt && $job->updated_at && $job->updated_at->gt($savedAt);
+            $job->saved_by_me = true;
+            $job->updated_since_saved = (bool) $updated;
+            $job->updated_since_saved_reason = $updated
+                ? 'Job details changed after you saved it.'
+                : null;
+        }
 
         return JobResource::collection($savedJobs);
     }

@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\Candidate\CandidateDashboardController;
 use App\Http\Controllers\Api\Candidate\CandidateSettingsController;
 use App\Http\Controllers\Api\Candidate\CandidateRecommendedJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSavedJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSavedSearchController;
+use App\Http\Controllers\Api\Candidate\CandidateHiddenJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSkillController;
 use App\Http\Controllers\Api\CandidateAvailableSlotsController;
 use App\Http\Controllers\Api\CandidateInterviewController;
@@ -38,6 +40,8 @@ use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardControll
 use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Api\Admin\CompanyDetailsController;
 use App\Http\Controllers\Api\Company\CompanyProfileController;
+use App\Http\Controllers\Api\PublicCompanyController;
+use App\Http\Controllers\Api\PublicFeaturedController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +73,14 @@ Route::get('/hello', function () {
 Route::middleware('throttle:60,1')->prefix('jobs')->name('jobs.')->group(function () {
     Route::get('/', [JobController::class, 'index'])->name('index');
     Route::get('{job}', [JobController::class, 'show'])->whereNumber('job')->name('show');
+});
+
+// Public company discovery and homepage content.
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/companies', [PublicCompanyController::class, 'index'])->name('companies.index');
+    Route::get('/companies/{id}/jobs', [PublicCompanyController::class, 'jobs'])->whereNumber('id')->name('companies.jobs');
+    Route::get('/companies/{id}', [PublicCompanyController::class, 'show'])->whereNumber('id')->name('companies.show');
+    Route::get('/public/featured', [PublicFeaturedController::class, 'index'])->name('public.featured');
 });
 
 /*
@@ -247,6 +259,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/saved-jobs', [CandidateSavedJobController::class, 'index'])->name('saved-jobs.index');
         Route::post('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'store'])->whereNumber('jobId')->name('saved-jobs.store');
         Route::delete('/saved-jobs/{jobId}', [CandidateSavedJobController::class, 'destroy'])->whereNumber('jobId')->name('saved-jobs.destroy');
+
+        // Saved searches and recommendation controls
+        Route::get('/saved-searches', [CandidateSavedSearchController::class, 'index'])->name('saved-searches.index');
+        Route::post('/saved-searches', [CandidateSavedSearchController::class, 'store'])->name('saved-searches.store');
+        Route::put('/saved-searches/{id}', [CandidateSavedSearchController::class, 'update'])->whereNumber('id')->name('saved-searches.update');
+        Route::delete('/saved-searches/{id}', [CandidateSavedSearchController::class, 'destroy'])->whereNumber('id')->name('saved-searches.destroy');
+        Route::post('/recommended-jobs/{jobId}/hide', [CandidateHiddenJobController::class, 'store'])->whereNumber('jobId')->name('recommended-jobs.hide');
 
         // Available Interview Slots & Interviews
         Route::get('/available-slots', [CandidateAvailableSlotsController::class, 'index'])->name('available-slots');

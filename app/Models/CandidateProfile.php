@@ -77,6 +77,16 @@ class CandidateProfile extends Model
             ->withTimestamps();
     }
 
+    public function savedSearches(): HasMany
+    {
+        return $this->hasMany(CandidateSavedSearch::class, 'candidate_id');
+    }
+
+    public function hiddenJobs(): HasMany
+    {
+        return $this->hasMany(CandidateHiddenJob::class, 'candidate_id');
+    }
+
     public function onboarding(): HasOne
     {
         return $this->hasOne(CandidateOnboarding::class, 'candidate_id');

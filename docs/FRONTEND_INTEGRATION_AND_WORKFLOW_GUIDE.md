@@ -35,6 +35,8 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api` | `status`, `message` |
 | `GET /api/hello` | `message` |
 | `GET /api/jobs`, `GET /api/jobs/{job}` | `data` |
+| `GET /api/companies`, `GET /api/companies/{id}`, `GET /api/companies/{id}/jobs` | `data` |
+| `GET /api/public/featured` | `featured_companies`, `featured_jobs`, `counts` |
 | `GET /api/job-categories`, `GET /api/skills`, `GET /api/countries` | `data` |
 | `GET /api/salary-benchmark` | `market_summary`, `records` |
 | `POST /api/auth/register/candidate` | `user`, `access_token`, `token`, `token_type` |
@@ -53,6 +55,9 @@ The table below documents the primary success key for every API endpoint family.
 | `GET|PUT /api/candidate/onboarding`, `GET|PUT /api/candidate/preferences` | `data` |
 | `GET|PUT /api/candidate/notification-settings`, `GET|PUT /api/candidate/privacy` | `data` |
 | `GET /api/candidate/profile/preview`, `GET /api/candidate/dashboard` | `data` |
+| `GET|POST|PUT|DELETE /api/candidate/saved-searches` | `data` |
+| `GET /api/candidate/recommended-jobs`, `GET /api/candidate/saved-jobs` | `data` |
+| `POST /api/candidate/recommended-jobs/{jobId}/hide` | `data`, `message` |
 | Candidate CV, experience and education CRUD endpoints | `data` for resources/collections; delete endpoints return `message` |
 | `GET /api/candidate/applications`, `GET /api/candidate/applications/{id}` | `data` |
 | `POST /api/jobs/{jobId}/apply`, `PATCH /api/company/applications/{id}/status` | `application` |
@@ -344,8 +349,10 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
 
 #### Screen 8: Public Job Search & Filter Page (`/jobs`)
 - **Event: Page Load / Filter Change**
-  - **Method & Route:** `GET /api/jobs?q={search}&category_id={cat}&work_mode={mode}&salary_min={min}&page={page}`
-  - **Action:** Render job cards with Company Name, Location, Salary Range, Work Mode badge.
+  - **Method & Route:** `GET /api/jobs?q={search}&employment_type[]=full_time&employment_type[]=contract&work_mode[]=remote&work_mode[]=hybrid&category_id={cat}&salary_min={min}&salary_max={max}&page={page}`
+  - `discipline` is also accepted as an alias for `category_id`.
+  - **Action:** Render job cards with Company Name, Location, Salary Range, Work Mode badge, hiring model, requisition code, posted date, `saved_by_me`, and `applied_by_me`.
+  - **Response:** `data` is paginated job resources. The top-level response also includes `total_count` and `facets` (`employment_type`, `work_mode`, and `category`) for filter controls. `employment_type[]` and `work_mode[]` may be repeated query parameters; scalar values remain accepted for compatibility.
 - **Optional Helper:** Click **"View Salary Benchmark"**
   - **Method & Route:** `GET /api/salary-benchmark?job_title=Backend`
   - **Action:** Render market average min/max salary chart for that job role.
@@ -353,7 +360,7 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
 #### Screen 9: Job Details Page (`/jobs/:id`)
 - **Event: Page Load**
   - **Method & Route:** `GET /api/jobs/{id}`
-  - **Action:** Render full job description, required skills, company details, deadline.
+  - **Action:** Render full job description, required skills, deadline, hiring model, requisition code, salary summary, hiring contact, company about data, and candidate state (`saved_by_me`, `applied_by_me`).
 - **Trigger / Button:** Click **"Apply for this Job"** Modal
   - **Method & Route:** `POST /api/jobs/{jobId}/apply`
   - **Request Payload:**
@@ -366,6 +373,27 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
     ```
   - **Success Action (201):** Show modal: *"Application submitted successfully!"*, disable button, display status badge: `"Submitted"`.
   - **Error Action (409 Conflict):** Show alert: *"You already have an active application for this job."*
+
+#### Screen 9a: Public Companies and Featured Home (`/companies`, `/companies/:id`)
+- **Company list:** `GET /api/companies` returns approved public companies under `data` with pagination.
+- **Company page:** `GET /api/companies/{id}` returns the approved company's description, culture, benefits, locations, social links, hiring team, and `open_roles_count` under `data`.
+- **Company jobs:** `GET /api/companies/{id}/jobs` returns that company's available public roles under `data`; candidate users also receive `saved_by_me` and `applied_by_me` on each job.
+- **Featured home content:** `GET /api/public/featured` returns `featured_companies`, `featured_jobs`, and `counts` under the response root. This endpoint is public and only includes approved companies and available jobs.
+
+#### Screen 9b: Saved Searches, Recommendations, and Saved Jobs
+- **Saved search list/create:** `GET|POST /api/candidate/saved-searches`.
+- **Saved search update/delete:** `PUT|DELETE /api/candidate/saved-searches/{id}`. Create/update payload:
+  ```json
+  {
+    "name": "Remote backend roles",
+    "filters": {"q": "backend", "work_mode": ["remote"], "salary_min": 15000},
+    "weekly_alerts": true,
+    "is_paused": false
+  }
+  ```
+- **Recommendations:** `GET /api/candidate/recommended-jobs?hide_irrelevant=true&include_applied=true`. Each job includes `why_it_fits` (array of reasons), `already_applied`/`applied_by_me`, and `hide_irrelevant` is enabled by default. `include_applied` is optional and defaults to `false` for compatibility.
+- **Hide a recommendation:** `POST /api/candidate/recommended-jobs/{jobId}/hide` with optional `{ "reason": "Not relevant" }`. The operation is idempotent for the same candidate/job.
+- **Saved jobs:** `GET /api/candidate/saved-jobs?work_model=remote&sort=updated_desc`. Supported sort values are `updated_desc` and `title_asc`; each result includes `updated_since_saved` and `updated_since_saved_reason`.
 
 #### Screen 10: Candidate Applications Tracker (`/candidate/applications`)
 - **Event: Page Load**

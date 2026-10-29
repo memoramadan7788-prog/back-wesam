@@ -6,12 +6,12 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **159 API route entries** and **126 OpenAPI paths**. Part C candidate portal tests pass; a full SQLite run currently has **242 passing tests and 11 known legacy fixture failures** unrelated to Parts B/C. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **165 API route entries** and **133 OpenAPI paths**. Part D discovery tests pass; the focused discovery regression suite has **27 passing tests and 242 assertions** on SQLite. The full suite still has known legacy fixture failures unrelated to this Part D change. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
 
-## 2. Complete Database Catalog (All 60 Tables)
+## 2. Complete Database Catalog (All 62 Tables)
 
 Every table below is created by Laravel migrations. The complete migration-and-seeding flow is verified by the setup feature test with SQLite; run the same commands against MySQL for local development. Application tables include audit columns (`UID`, `LUID`, `created_at`, `updated_at`, `deleted_at`).
 
@@ -79,12 +79,14 @@ Platform administrators are isolated from the user RBAC tables. Their account, r
 | 58 | `candidate_preferences` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Desired job titles, location, salary and work-model preferences | Candidate-owned |
 | 59 | `candidate_notification_settings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate alert and marketing preferences | Candidate-owned |
 | 60 | `candidate_privacy_settings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate profile visibility and recruiter consent | Candidate-owned |
+| 61 | `candidate_saved_searches` | [2026_10_29_000004_create_candidate_discovery_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000004_create_candidate_discovery_tables.php) | Candidate saved job searches, weekly alerts, and pause state | Candidate-owned |
+| 62 | `candidate_hidden_jobs` | [2026_10_29_000004_create_candidate_discovery_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000004_create_candidate_discovery_tables.php) | Candidate hidden/irrelevant recommendation records | Candidate-owned |
 
 ---
 
 ## 3. Currently Implemented APIs & Components
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 159 API route entries and is backed by targeted feature tests.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 165 API route entries and is backed by targeted feature tests.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -95,6 +97,24 @@ The module inventory below documents the main API flows. The source of truth is 
 |:---|:---|:---|:---|:---|
 | `GET` | `/api/jobs` | `JobController@index` | `throttle:60,1` | Browse available jobs with keyword search, title search, company search, skill filtering, salary sorting, and pagination. |
 | `GET` | `/api/jobs/{job}` | `JobController@show` | `throttle:60,1` | Retrieve single published job details including company, category, and required skills. |
+
+Part D extends this module with repeated-array filters (`employment_type[]`, `work_mode[]`, and `category_id`/`discipline`), salary range filtering, top-level `total_count`, and `facets`. Public job resources now expose hiring model, requisition code, salary summary, hiring contact, company-about data, posted date, and candidate saved/applied state when authenticated.
+
+### 3.1a. Public Companies, Featured Content, and Candidate Discovery
+
+| HTTP Method | Route Endpoint | Authentication | Description |
+|:---|:---|:---|:---|
+| `GET` | `/api/companies` | Public | Paginated approved company directory. |
+| `GET` | `/api/companies/{id}` | Public | Approved company profile with description, culture, benefits, locations, hiring team, social links, and open-role count. |
+| `GET` | `/api/companies/{id}/jobs` | Public/optional candidate | Available public jobs for a company; candidate state is included when authenticated. |
+| `GET` | `/api/public/featured` | Public | Featured companies, featured jobs, and aggregate counts. |
+| `GET|POST` | `/api/candidate/saved-searches` | `auth:sanctum` | List or create candidate-owned searches with filters, weekly alerts, and pause state. |
+| `PUT|DELETE` | `/api/candidate/saved-searches/{id}` | `auth:sanctum` | Update or delete only the authenticated candidate's saved search. |
+| `GET` | `/api/candidate/recommended-jobs` | `auth:sanctum` | Ranked recommendations with match reasons, applied state, and hidden-job filtering. |
+| `POST` | `/api/candidate/recommended-jobs/{jobId}/hide` | `auth:sanctum` | Hide a recommendation; repeated calls are idempotent. |
+| `GET` | `/api/candidate/saved-jobs` | `auth:sanctum` | Saved jobs with work-model filtering, sorting, and freshness metadata. |
+
+The Part D migrations add `jobs.requisition_code`, `jobs.hiring_model`, public company-about fields (`description`, `culture`, `benefits`, `locations`), and the candidate discovery tables `candidate_saved_searches` and `candidate_hidden_jobs`.
 
 ### 3.2. Admin Authentication Module
 - **Controllers:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php), [`App\Http\Controllers\Api\Admin\AdminAnalyticsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAnalyticsController.php)

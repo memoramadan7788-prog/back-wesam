@@ -2951,6 +2951,54 @@
                 }
             }
         },
+        "/candidate/recommended-jobs/{jobId}/hide": {
+            "post": {
+                "operationId": "candidate.recommended-jobs.hide",
+                "summary": "POST /api/candidate/recommended-jobs/{jobId}/hide",
+                "tags": [
+                    "CandidateHiddenJob"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "reason": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/candidate/interviews": {
             "get": {
                 "operationId": "candidate.interviews.index",
@@ -3866,6 +3914,16 @@
                 "tags": [
                     "CandidateRecommendedJob"
                 ],
+                "parameters": [
+                    {
+                        "name": "include_applied",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Paginated set of `JobResource`",
@@ -3884,6 +3942,7 @@
                                                     {
                                                         "type": "object",
                                                         "required": [
+                                                            "company",
                                                             "skills"
                                                         ]
                                                     }
@@ -4005,12 +4064,20 @@
                                                 "to",
                                                 "total"
                                             ]
+                                        },
+                                        "hide_irrelevant": {
+                                            "type": "boolean"
+                                        },
+                                        "include_applied": {
+                                            "type": "boolean"
                                         }
                                     },
                                     "required": [
                                         "data",
                                         "links",
-                                        "meta"
+                                        "meta",
+                                        "hide_irrelevant",
+                                        "include_applied"
                                     ]
                                 }
                             }
@@ -4028,6 +4095,15 @@
                 "summary": "GET /api/candidate/saved-jobs\nList saved jobs for the authenticated candidate with pagination",
                 "tags": [
                     "CandidateSavedJob"
+                ],
+                "parameters": [
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {
@@ -4047,6 +4123,7 @@
                                                     {
                                                         "type": "object",
                                                         "required": [
+                                                            "company",
                                                             "skills"
                                                         ]
                                                     }
@@ -4323,6 +4400,314 @@
                                         "message": {
                                             "type": "string",
                                             "const": "Job not found in your saved list."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/candidate/saved-searches": {
+            "get": {
+                "operationId": "candidate.saved-searches.index",
+                "summary": "GET /api/candidate/saved-searches",
+                "tags": [
+                    "CandidateSavedSearch"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "filters": {
+                                                        "type": "string"
+                                                    },
+                                                    "weekly_alerts": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "is_paused": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "last_alerted_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "created_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "updated_at": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "name",
+                                                    "filters",
+                                                    "weekly_alerts",
+                                                    "is_paused",
+                                                    "last_alerted_at",
+                                                    "created_at",
+                                                    "updated_at"
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "candidate.saved-searches.store",
+                "summary": "POST /api/candidate/saved-searches",
+                "tags": [
+                    "CandidateSavedSearch"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreSavedSearchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "filters": {
+                                                    "type": "string"
+                                                },
+                                                "weekly_alerts": {
+                                                    "type": "boolean"
+                                                },
+                                                "is_paused": {
+                                                    "type": "boolean"
+                                                },
+                                                "last_alerted_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "filters",
+                                                "weekly_alerts",
+                                                "is_paused",
+                                                "last_alerted_at",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/candidate/saved-searches/{id}": {
+            "put": {
+                "operationId": "candidate.saved-searches.update",
+                "summary": "PUT /api/candidate/saved-searches/{id}",
+                "tags": [
+                    "CandidateSavedSearch"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateSavedSearchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "filters": {
+                                                    "type": "string"
+                                                },
+                                                "weekly_alerts": {
+                                                    "type": "boolean"
+                                                },
+                                                "is_paused": {
+                                                    "type": "boolean"
+                                                },
+                                                "last_alerted_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "filters",
+                                                "weekly_alerts",
+                                                "is_paused",
+                                                "last_alerted_at",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "candidate.saved-searches.destroy",
+                "summary": "DELETE /api/candidate/saved-searches/{id}",
+                "tags": [
+                    "CandidateSavedSearch"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Saved search deleted successfully."
                                         }
                                     },
                                     "required": [
@@ -8486,6 +8871,42 @@
                                                 "industry": {
                                                     "type": "string"
                                                 },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "culture": {
+                                                    "type": "string"
+                                                },
+                                                "benefits": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
+                                                "locations": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
                                                 "contact_email": {
                                                     "type": "string"
                                                 },
@@ -8511,6 +8932,10 @@
                                                 "name",
                                                 "website",
                                                 "industry",
+                                                "description",
+                                                "culture",
+                                                "benefits",
+                                                "locations",
                                                 "contact_email",
                                                 "contact_phone",
                                                 "address",
@@ -8563,6 +8988,40 @@
                                             "null"
                                         ],
                                         "maxLength": 255
+                                    },
+                                    "description": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 10000
+                                    },
+                                    "culture": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 10000
+                                    },
+                                    "benefits": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
+                                    },
+                                    "locations": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 255
+                                        }
                                     },
                                     "contact_email": {
                                         "type": [
@@ -8620,6 +9079,42 @@
                                                 "industry": {
                                                     "type": "string"
                                                 },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "culture": {
+                                                    "type": "string"
+                                                },
+                                                "benefits": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
+                                                "locations": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
                                                 "contact_email": {
                                                     "type": "string"
                                                 },
@@ -8645,6 +9140,10 @@
                                                 "name",
                                                 "website",
                                                 "industry",
+                                                "description",
+                                                "culture",
+                                                "benefits",
+                                                "locations",
                                                 "contact_email",
                                                 "contact_phone",
                                                 "address",
@@ -10294,31 +10793,36 @@
                         }
                     },
                     {
-                        "name": "employment_type",
+                        "name": "employment_type[]",
                         "in": "query",
                         "schema": {
-                            "type": [
-                                "string",
-                                "null"
-                            ],
+                            "type": "array",
                             "pattern": "^[A-Za-z0-9_\\- ]+$",
-                            "maxLength": 50
+                            "items": {
+                                "type": "string",
+                                "pattern": "^[A-Za-z0-9_\\- ]+$",
+                                "maxLength": 50
+                            }
                         }
                     },
                     {
-                        "name": "work_mode",
+                        "name": "work_mode[]",
                         "in": "query",
                         "schema": {
-                            "type": [
-                                "string",
-                                "null"
-                            ],
+                            "type": "array",
                             "enum": [
                                 "onsite",
                                 "remote",
-                                "hybrid",
-                                null
-                            ]
+                                "hybrid"
+                            ],
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "onsite",
+                                    "remote",
+                                    "hybrid"
+                                ]
+                            }
                         }
                     },
                     {
@@ -10486,6 +10990,7 @@
                                                     {
                                                         "type": "object",
                                                         "required": [
+                                                            "company",
                                                             "skills"
                                                         ]
                                                     }
@@ -10607,12 +11112,39 @@
                                                 "to",
                                                 "total"
                                             ]
+                                        },
+                                        "total_count": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                        },
+                                        "facets": {
+                                            "type": "object",
+                                            "properties": {
+                                                "employment_type": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "work_mode": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "category": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "employment_type",
+                                                "work_mode",
+                                                "category"
+                                            ]
                                         }
                                     },
                                     "required": [
                                         "data",
                                         "links",
-                                        "meta"
+                                        "meta",
+                                        "total_count",
+                                        "facets"
                                     ]
                                 }
                             }
@@ -10657,6 +11189,7 @@
                                                 {
                                                     "type": "object",
                                                     "required": [
+                                                        "company",
                                                         "skills"
                                                     ]
                                                 }
@@ -11409,6 +11942,318 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/companies": {
+            "get": {
+                "operationId": "companies.index",
+                "summary": "GET /api/companies",
+                "tags": [
+                    "PublicCompany"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `CompanyPublicResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/CompanyPublicResource"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "social_links"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/{id}/jobs": {
+            "get": {
+                "operationId": "companies.jobs",
+                "summary": "GET /api/companies/{id}/jobs",
+                "tags": [
+                    "PublicCompany"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `JobResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/JobResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/companies/{id}": {
+            "get": {
+                "operationId": "companies.show",
+                "summary": "GET /api/companies/{id}",
+                "tags": [
+                    "PublicCompany"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CompanyPublicResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/CompanyPublicResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "social_links"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/public/featured": {
+            "get": {
+                "operationId": "public.featured",
+                "summary": "GET /api/public/featured",
+                "tags": [
+                    "PublicFeatured"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "featured_companies": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "featured_jobs": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "counts": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "companies": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        },
+                                                        "jobs": {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "companies",
+                                                        "jobs"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "featured_companies",
+                                                "featured_jobs",
+                                                "counts"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -14669,6 +15514,143 @@
                 ],
                 "title": "CompanyJobResource"
             },
+            "CompanyPublicResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "website": {
+                        "type": "string"
+                    },
+                    "industry": {
+                        "type": "string"
+                    },
+                    "logo_path": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "culture": {
+                        "type": "string"
+                    },
+                    "benefits": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0
+                            }
+                        ]
+                    },
+                    "locations": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0
+                            }
+                        ]
+                    },
+                    "open_roles_count": {
+                        "type": "integer"
+                    },
+                    "hiring_team": {
+                        "type": "array",
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "user_id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "role": {
+                                            "type": "string",
+                                            "const": "owner"
+                                        }
+                                    },
+                                    "required": [
+                                        "user_id",
+                                        "name",
+                                        "role"
+                                    ]
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "user_id": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "role": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "user_id",
+                                        "name",
+                                        "role"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "social_links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "platform": {
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "platform",
+                                "url"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "website",
+                    "industry",
+                    "logo_path",
+                    "description",
+                    "culture",
+                    "benefits",
+                    "locations",
+                    "open_roles_count",
+                    "hiring_team"
+                ],
+                "title": "CompanyPublicResource"
+            },
             "Country": {
                 "type": "array",
                 "items": {
@@ -15224,6 +16206,42 @@
                             "null"
                         ]
                     },
+                    "posted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "requisition_code": {
+                        "type": "string"
+                    },
+                    "hiring_model": {
+                        "type": "string"
+                    },
+                    "saved_by_me": {
+                        "type": "boolean"
+                    },
+                    "applied_by_me": {
+                        "type": "boolean"
+                    },
+                    "why_it_fits": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_since_saved": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_since_saved_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "company": {
                         "type": "object",
                         "properties": {
@@ -15241,6 +16259,68 @@
                             },
                             "logo_path": {
                                 "type": "string"
+                            },
+                            "about": {
+                                "type": "object",
+                                "properties": {
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "culture": {
+                                        "type": "string"
+                                    },
+                                    "benefits": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 0,
+                                                "maxItems": 0
+                                            }
+                                        ]
+                                    },
+                                    "locations": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 0,
+                                                "maxItems": 0
+                                            }
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "description",
+                                    "culture",
+                                    "benefits",
+                                    "locations"
+                                ]
+                            },
+                            "hiring_contact": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "email"
+                                ]
                             }
                         },
                         "required": [
@@ -15248,7 +16328,9 @@
                             "name",
                             "industry",
                             "website",
-                            "logo_path"
+                            "logo_path",
+                            "about",
+                            "hiring_contact"
                         ]
                     },
                     "category": {
@@ -15313,6 +16395,14 @@
                     "experience_years",
                     "deadline",
                     "published_at",
+                    "posted_at",
+                    "requisition_code",
+                    "hiring_model",
+                    "saved_by_me",
+                    "applied_by_me",
+                    "why_it_fits",
+                    "updated_since_saved",
+                    "updated_since_saved_reason",
                     "department",
                     "openings_count",
                     "is_accepting_applications"
@@ -15420,6 +16510,42 @@
                             "null"
                         ]
                     },
+                    "posted_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "requisition_code": {
+                        "type": "string"
+                    },
+                    "hiring_model": {
+                        "type": "string"
+                    },
+                    "saved_by_me": {
+                        "type": "boolean"
+                    },
+                    "applied_by_me": {
+                        "type": "boolean"
+                    },
+                    "why_it_fits": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_since_saved": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_since_saved_reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
                     "company": {
                         "type": "object",
                         "properties": {
@@ -15437,6 +16563,68 @@
                             },
                             "logo_path": {
                                 "type": "string"
+                            },
+                            "about": {
+                                "type": "object",
+                                "properties": {
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "culture": {
+                                        "type": "string"
+                                    },
+                                    "benefits": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 0,
+                                                "maxItems": 0
+                                            }
+                                        ]
+                                    },
+                                    "locations": {
+                                        "anyOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "minItems": 0,
+                                                "maxItems": 0
+                                            }
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "description",
+                                    "culture",
+                                    "benefits",
+                                    "locations"
+                                ]
+                            },
+                            "hiring_contact": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "email"
+                                ]
                             }
                         },
                         "required": [
@@ -15444,7 +16632,9 @@
                             "name",
                             "industry",
                             "website",
-                            "logo_path"
+                            "logo_path",
+                            "about",
+                            "hiring_contact"
                         ]
                     },
                     "category": {
@@ -15499,7 +16689,15 @@
                     "salary",
                     "experience_years",
                     "deadline",
-                    "published_at"
+                    "published_at",
+                    "posted_at",
+                    "requisition_code",
+                    "hiring_model",
+                    "saved_by_me",
+                    "applied_by_me",
+                    "why_it_fits",
+                    "updated_since_saved",
+                    "updated_since_saved_reason"
                 ],
                 "title": "JobResource"
             },
@@ -16374,6 +17572,33 @@
                 ],
                 "title": "StoreQuestionRequest"
             },
+            "StoreSavedSearchRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "minItems": 1
+                    },
+                    "weekly_alerts": {
+                        "type": "boolean"
+                    },
+                    "is_paused": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "name",
+                    "filters"
+                ],
+                "title": "StoreSavedSearchRequest"
+            },
             "SubmitApplicationRequest": {
                 "type": "object",
                 "properties": {
@@ -16956,6 +18181,28 @@
                     }
                 },
                 "title": "UpdateProfileRequest"
+            },
+            "UpdateSavedSearchRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "filters": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "weekly_alerts": {
+                        "type": "boolean"
+                    },
+                    "is_paused": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateSavedSearchRequest"
             },
             "UpdateUserStatusRequest": {
                 "type": "object",
