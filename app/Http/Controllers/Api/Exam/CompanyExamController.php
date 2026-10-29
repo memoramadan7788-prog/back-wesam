@@ -19,6 +19,45 @@ use Illuminate\Support\Facades\DB;
 class CompanyExamController extends Controller
 {
     /**
+     * GET /api/company/exams
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $companyId = $request->user()->resolveCompanyId();
+
+        if (! $companyId) {
+            return response()->json(['message' => 'You are not associated with any company.'], 403);
+        }
+
+        $exams = Exam::query()
+            ->where('company_id', $companyId)
+            ->withCount('questions')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return ExamResource::collection($exams)->response();
+    }
+
+    /**
+     * GET /api/company/exams/{id}
+     */
+    public function show(Request $request, int $id): JsonResponse
+    {
+        $companyId = $request->user()->resolveCompanyId();
+
+        if (! $companyId) {
+            return response()->json(['message' => 'You are not associated with any company.'], 403);
+        }
+
+        $exam = Exam::query()
+            ->where('company_id', $companyId)
+            ->with('questions.options')
+            ->findOrFail($id);
+
+        return (new ExamResource($exam))->response();
+    }
+
+    /**
      * POST /api/company/exams
      *
      * company_id is auto-resolved from the authenticated user (Phase 0.1).

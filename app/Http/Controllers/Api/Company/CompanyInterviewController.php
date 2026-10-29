@@ -184,6 +184,35 @@ class CompanyInterviewController extends Controller
     }
 
     /**
+     * GET /api/company/applications/{id}/interviews
+     *
+     * List interviews for one application after verifying that its job
+     * belongs to the authenticated company.
+     */
+    public function applicationInterviews(Request $request, int $applicationId): AnonymousResourceCollection
+    {
+        $user = $request->user();
+        $companyId = $user->resolveCompanyId();
+        $application = Application::with('job')->findOrFail($applicationId);
+
+        if ($user->account_type !== 'admin' && (int) $application->job->company_id !== (int) $companyId) {
+            abort(403, 'You do not have permission to access interviews for this application.');
+        }
+
+        $interviews = Interview::with([
+            'application.job',
+            'bookings.interviewer',
+            'bookings.availability',
+            'evaluations',
+        ])->where('application_id', $applicationId)
+            ->orderBy('round_no')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return InterviewerInterviewResource::collection($interviews);
+    }
+
+    /**
      * POST /api/company/interviews/{id}/cancel
      */
     public function cancel(Request $request, int $id): JsonResponse

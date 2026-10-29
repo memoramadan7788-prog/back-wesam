@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\RegisterCompanyRequest;
 use App\Http\Requests\Auth\RegisterEmployeeRequest;
 use App\Http\Resources\UserResource;
 use App\Models\AccountStatus;
+use App\Models\Admin;
 use App\Models\CandidateProfile;
 use App\Models\Company;
 use App\Models\Role;
@@ -298,6 +299,33 @@ class UserAuthController extends Controller
 
         return response()->json([
             'message' => 'Password changed successfully.',
+        ], 200);
+    }
+
+    /**
+     * DELETE /api/auth/account
+     *
+     * User accounts are soft-deleted and all active API tokens are revoked.
+     * Platform admins use the dedicated admin lifecycle instead.
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user instanceof Admin) {
+            return response()->json([
+                'message' => 'Platform admin accounts cannot be deleted from the user account endpoint.',
+            ], 403);
+        }
+
+        $user->forceFill([
+            'account_status_id' => AccountStatus::DELETED,
+        ])->save();
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json([
+            'message' => 'Account deleted successfully.',
         ], 200);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Exam;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Exam\SubmitExamAnswerRequest;
 use App\Http\Resources\ExamAttemptResource;
+use App\Http\Resources\ExamResource;
 use App\Http\Resources\QuestionResource;
 use App\Models\Answer;
 use App\Models\Application;
@@ -20,6 +21,40 @@ use Illuminate\Validation\ValidationException;
 
 class CandidateExamController extends Controller
 {
+    /**
+     * GET /api/candidate/exams
+     *
+     * List published exams attached to jobs the authenticated candidate
+     * applied to, including exams where an attempt already exists.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $candidateId = $request->user()->candidateProfile?->id;
+
+        if (! $candidateId) {
+            return response()->json([
+                'message' => 'Candidate profile not found.',
+            ], 403);
+        }
+
+        $exams = Exam::query()
+            ->where('status', 'published')
+            ->where(function ($query) use ($candidateId) {
+                $query->whereHas('jobExams.job.applications', function ($applicationQuery) use ($candidateId) {
+                    $applicationQuery->where('candidate_id', $candidateId);
+                })->orWhereHas('examAttempts.application', function ($applicationQuery) use ($candidateId) {
+                    $applicationQuery->where('candidate_id', $candidateId);
+                });
+            })
+            ->withCount(['examAttempts as candidate_attempts_count' => function ($query) use ($candidateId) {
+                $query->whereHas('application', fn ($applicationQuery) => $applicationQuery->where('candidate_id', $candidateId));
+            }])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return ExamResource::collection($exams)->response();
+    }
+
     /**
      * POST /api/candidate/exams/{examId}/applications/{applicationId}/start
      */

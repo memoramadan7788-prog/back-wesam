@@ -98,6 +98,8 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [UserAuthController::class, 'logout'])->name('logout');
         Route::get('/me', [UserAuthController::class, 'me'])->name('me');
+        Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
+        Route::delete('/account', [UserAuthController::class, 'deleteAccount'])->name('account.delete');
     });
 });
 
@@ -105,6 +107,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/forgot-password', [UserAuthController::class, 'forgotPassword'])->name('password.email');
     Route::post('/reset-password', [UserAuthController::class, 'resetPassword'])->name('password.reset');
 });
+
+// Compatibility reset-password path used by the company frontend.
+Route::post('/company/reset-password', [UserAuthController::class, 'resetPassword'])
+    ->name('api.company.password.reset');
 
 /*
 |--------------------------------------------------------------------------
@@ -180,6 +186,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/profile', [CandidateProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [CandidateProfileController::class, 'update'])->name('profile.update');
         Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
+        Route::delete('/account', [UserAuthController::class, 'deleteAccount'])->name('account.delete');
 
         // Notifications
         Route::get('/notifications', [CandidateProfileController::class, 'notifications'])->name('notifications.index');
@@ -227,6 +234,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/interviews/{id}/cancel', [CandidateInterviewController::class, 'cancel'])->name('interviews.cancel');
 
         // Exam Attempts
+        Route::get('/exams', [CandidateExamController::class, 'index'])->name('exams.index');
         Route::post('/exams/{examId}/applications/{applicationId}/start', [CandidateExamController::class, 'start'])->name('exams.start');
         Route::post('/exam-attempts/{attemptId}/submit', [CandidateExamController::class, 'submit'])->name('exam-attempts.submit');
         Route::get('/exam-attempts/{attemptId}/result', [CandidateExamController::class, 'result'])->name('exam-attempts.result');
@@ -256,6 +264,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 4a. Company profile & documents (NOT behind company.active: a pending company must upload its papers)
     Route::prefix('company')->name('api.company.profile.')->group(function () {
+        Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
+        Route::delete('/delete-account', [UserAuthController::class, 'deleteAccount'])->name('account.delete');
         Route::get('/profile', [CompanyProfileController::class, 'show'])->name('show');
         Route::put('/profile', [CompanyProfileController::class, 'update'])->name('update');
         Route::get('/documents', [CompanyProfileController::class, 'documents'])->name('documents.index');
@@ -266,6 +276,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 4. Company HR & Employer Portal
     Route::prefix('company')->name('api.company.')->middleware('company.active')->group(function () {
+        // Candidate/company exam discovery and details.
+        Route::get('/exams', [CompanyExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/{id}', [CompanyExamController::class, 'show'])->name('exams.show');
+
         // Employees & Interviewer Onboarding (Package 2)
         Route::post('/join-requests', [CompanyEmployeeController::class, 'storeJoinRequest'])->name('employees.join');
 
@@ -307,6 +321,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Company Interviews Management (Package 3)
         Route::post('/applications/{id}/interviews', [CompanyInterviewController::class, 'store'])->name('interviews.store');
+        Route::get('/applications/{id}/interviews', [CompanyInterviewController::class, 'applicationInterviews'])->name('applications.interviews.index');
         Route::get('/interviews', [CompanyInterviewController::class, 'index'])->name('interviews.index');
         Route::post('/interviews/{id}/cancel', [CompanyInterviewController::class, 'cancel'])->name('interviews.cancel');
 

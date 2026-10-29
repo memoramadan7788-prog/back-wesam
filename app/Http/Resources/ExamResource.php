@@ -19,6 +19,8 @@ class ExamResource extends JsonResource
             'attempt_limit'  => $this->attempt_limit,
             'passing_score'  => (float) $this->passing_score,
             'status'         => $this->status,
+            'questions_count' => $this->when(isset($this->questions_count), (int) $this->questions_count),
+            'candidate_attempts_count' => $this->when(isset($this->candidate_attempts_count), (int) $this->candidate_attempts_count),
             'questions'      => QuestionResource::collection($this->whenLoaded('questions')),
         ];
     }
