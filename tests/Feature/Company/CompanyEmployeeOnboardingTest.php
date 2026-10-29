@@ -530,4 +530,86 @@ class CompanyEmployeeOnboardingTest extends TestCase
             'status'     => 'pending',
         ]);
     }
+    
+    public function test_company_manager_can_update_employee_job_title_and_department(): void
+    {
+        $applicant = User::factory()->create(['account_type' => 'candidate']);
+        $employeeRecord = CompanyEmployee::create([
+            'company_id'           => $this->companyA->id,
+            'user_id'              => $applicant->id,
+            'requested_job_title'  => 'Old Job Title',
+            'requested_department' => 'Old Department',
+            'status'               => 'approved',
+            'role_id'              => $this->regularRole->id,
+            'joined_at'            => now(),
+        ]);
+
+        $response = $this->actingAs($this->hrUser)->patchJson("/api/company/employees/{$employeeRecord->id}", [
+            'requested_job_title'  => 'Senior Recruiter',
+            'requested_department' => 'Talent Acquisition',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('employee.requested_job_title', 'Senior Recruiter');
+        $response->assertJsonPath('employee.requested_department', 'Talent Acquisition');
+
+        $this->assertDatabaseHas('company_employees', [
+            'id'                   => $employeeRecord->id,
+            'requested_job_title'  => 'Senior Recruiter',
+            'requested_department' => 'Talent Acquisition',
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'action'  => 'employee.updated',
+            'user_id' => $this->hrUser->id,
+        ]);
+    }
+
+    public function test_update_fails_when_no_editable_fields_provided(): void
+    {
+        $applicant = User::factory()->create(['account_type' => 'candidate']);
+        $employeeRecord = CompanyEmployee::create([
+            'company_id'           => $this->companyA->id,
+            'user_id'              => $applicant->id,
+            'requested_job_title'  => 'Recruiter',
+            'status'               => 'pending',
+            'requested_at'         => now(),
+        ]);
+
+        $response = $this->actingAs($this->hrUser)->patchJson("/api/company/employees/{$employeeRecord->id}", []);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['update_data']);
+    }
+
+    public function test_update_prevents_modifying_protected_internal_fields(): void
+    {
+        $applicant = User::factory()->create(['account_type' => 'candidate']);
+        $employeeRecord = CompanyEmployee::create([
+            'company_id'           => $this->companyA->id,
+            'user_id'              => $applicant->id,
+            'requested_job_title'  => 'Software Developer',
+            'status'               => 'pending',
+            'requested_at'         => now(),
+        ]);
+
+        $response = $this->actingAs($this->hrUser)->patchJson("/api/company/employees/{$employeeRecord->id}", [
+            'requested_job_title' => 'Lead Developer',
+            'status'              => 'removed',
+            'company_id'          => 99999,
+            'role_id'             => 99999,
+        ]);
+
+        $response->assertStatus(200);
+
+        // التأكد من تعديل المسمى المسموح به ومنع تغيير الحقول الداخلية المحمية
+        $this->assertDatabaseHas('company_employees', [
+            'id'                  => $employeeRecord->id,
+            'requested_job_title' => 'Lead Developer',
+            'status'              => 'pending',
+            'company_id'          => $this->companyA->id,
+        ]);
+    }
+
+    
 }

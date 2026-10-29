@@ -245,7 +245,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/availabilities/{id}', [InterviewerAvailabilityController::class, 'destroy'])->name('availabilities.destroy');
     });
 
+
+
     // 4. Company HR & Employer Portal
+    
     Route::prefix('company')->name('api.company.')->middleware('company.active')->group(function () {
         // Employees & Interviewer Onboarding (Package 2)
         Route::post('/join-requests', [CompanyEmployeeController::class, 'storeJoinRequest'])->name('employees.join');
@@ -263,6 +266,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::middleware('permission:employees.manage')->group(function () {
             Route::delete('/employees/{id}', [CompanyEmployeeController::class, 'destroy'])->name('employees.destroy');
         });
+
+        Route::match(['put', 'patch'], '/employees/{id}', [CompanyEmployeeController::class, 'update'])->name('employees.update');
+
+
+
 
         // Jobs Management
         Route::get('/jobs', [CompanyJobController::class, 'index'])->name('jobs.index');

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Api\Company;
-
+use App\Http\Requests\Company\UpdateEmployeeRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Company\ApproveEmployeeRequest;
 use App\Http\Requests\Company\RejectEmployeeRequest;
@@ -124,5 +124,26 @@ class CompanyEmployeeController extends Controller
             'employee' => new CompanyEmployeeResource($updated),
         ], 200);
     }
-}
+
+    /**
+     * PUT|PATCH /api/company/employees/{id}
+     */
+    public function update(UpdateEmployeeRequest $request, int $id): JsonResponse
+    {
+        $employee = CompanyEmployee::with('company')->findOrFail($id);
+
+        $updated = $this->employeeService->update(
+            employee: $employee,
+            data: $request->validated(),
+            user: $request->user()
+        );
+
+        return response()->json([
+            'message'  => 'Employee details updated successfully.',
+            'employee' => new CompanyEmployeeResource($updated),
+        ], 200);
+    }
+
+    
+    }
 

@@ -108,6 +108,48 @@ class CompanyEmployeeService
     }
 
     /**
+     * Update employee details (requested_job_title, requested_department).
+     */
+    public function update(CompanyEmployee $employee, array $data, User $user): CompanyEmployee
+    {
+        $userCompanyId = $user->resolveCompanyId();
+
+        if ($user->account_type !== 'admin' && (int) $employee->company_id !== (int) $userCompanyId) {
+            abort(403, 'You do not have permission to manage employees belonging to another company.');
+        }
+
+        if (in_array($employee->status, ['rejected', 'removed'])) {
+            abort(409, "Cannot update employee details with status '{$employee->status}'.");
+        }
+
+        return DB::transaction(function () use ($employee, $data, $user) {
+            $oldValues = [
+                'requested_job_title'  => $employee->requested_job_title,
+                'requested_department' => $employee->requested_department,
+            ];
+
+            $employee->update(array_filter([
+                'requested_job_title'  => $data['requested_job_title'] ?? $employee->requested_job_title,
+                'requested_department' => array_key_exists('requested_department', $data) ? $data['requested_department'] : $employee->requested_department,
+            ], fn ($value) => $value !== null || array_key_exists('requested_department', $data)));
+
+            AuditLog::record(
+                action: 'employee.updated',
+                subject: $employee,
+                userId: $user->id,
+                oldValues: $oldValues,
+                newValues: [
+                    'requested_job_title'  => $employee->requested_job_title,
+                    'requested_department' => $employee->requested_department,
+                ],
+                reason: 'Company employee details updated.'
+            );
+
+            return $employee->fresh(['user', 'role', 'reviewer', 'company']);
+        });
+    }
+
+    /**
      * Approve a pending employee join request and assign a role.
      */
     public function approve(CompanyEmployee $employee, int $roleId, User $reviewer): CompanyEmployee
@@ -274,4 +316,3 @@ class CompanyEmployeeService
         });
     }
 }
-
