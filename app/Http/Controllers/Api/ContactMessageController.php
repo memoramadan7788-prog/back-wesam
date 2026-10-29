@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 
 class ContactMessageController extends Controller
 {
-    /** POST /api/contact. Guests must identify themselves; registered users are resolved from users. */
+    /** POST /api/contact. Name and email are always required for support follow-up. */
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -21,16 +21,16 @@ class ContactMessageController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:10000'],
         ];
-        $identityRules = $user
-            ? ['name' => ['nullable', 'string', 'max:255'], 'email' => ['nullable', 'email', 'max:255']]
-            : ['name' => ['required', 'string', 'max:255'], 'email' => ['required', 'email', 'max:255']];
-        $data = $request->validate(array_merge($baseRules, $identityRules));
+        $data = $request->validate(array_merge($baseRules, [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255'],
+        ]));
 
         $message = ContactMessage::create([
             'title' => $data['title'],
             'description' => $data['description'],
-            'name' => $user?->name ?? $data['name'],
-            'email' => $user?->email ?? $data['email'],
+            'name' => $data['name'],
+            'email' => $data['email'],
             'user_id' => $user instanceof \App\Models\User ? $user->id : null,
             'admin_id' => $user instanceof Admin ? $user->id : null,
             'status' => 'new',

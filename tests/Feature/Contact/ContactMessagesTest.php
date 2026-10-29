@@ -38,15 +38,15 @@ class ContactMessagesTest extends TestCase
         ]);
     }
 
-    public function test_authenticated_user_identity_is_taken_from_users_table(): void
+    public function test_authenticated_user_can_send_contact_details_and_is_linked_to_users_table(): void
     {
         $user = User::factory()->create(['name' => 'Registered User', 'email' => 'registered@example.com']);
 
         $this->actingAs($user)->postJson('/api/contact', [
             'title' => 'Help me sign in',
             'description' => 'I cannot access my dashboard.',
-            'name' => 'Forged Name',
-            'email' => 'forged@example.com',
+            'name' => 'Registered User',
+            'email' => 'registered@example.com',
         ])->assertCreated()
             ->assertJsonPath('data.name', 'Registered User')
             ->assertJsonPath('data.email', 'registered@example.com')

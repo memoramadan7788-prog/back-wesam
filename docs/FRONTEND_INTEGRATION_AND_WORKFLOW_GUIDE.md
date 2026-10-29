@@ -982,8 +982,8 @@ Required body:
 }
 ```
 
-- Guest users must also send `name` and `email`.
-- Authenticated users may omit them; the API takes the authoritative `name`, `email`, and `user_id` from the authenticated account in the `users` table. Client-supplied identity values are ignored.
+- `name` and `email` are always required, including for authenticated users. This is intentional because the person may be reporting a registration problem or may have a suspended/deleted account and no usable token.
+- If a valid authenticated user sends the request, the API also stores `user_id` as a link to the `users` table. The submitted name/email remain the contact snapshot used by Super Admin for follow-up.
 - Success is `201` and returns the created message under `data` with initial status `new`.
 
 ### Super Admin management
