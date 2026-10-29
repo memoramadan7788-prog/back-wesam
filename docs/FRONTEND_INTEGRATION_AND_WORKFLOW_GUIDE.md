@@ -138,16 +138,20 @@ flowchart TD
 #### Screen 2: Company Registration (`/register/company`)
 - **Trigger / Button:** Click **"Register Enterprise Account"**
 - **Method & Route:** `POST /api/auth/register/company`
-- **Request Payload (Multipart FormData):**
-  ```text
-  company_name: Acme Inc.
-  owner_name: Tarek Ali
-  email: tarek@acme.com
-  password: Password123!
-  password_confirmation: Password123!
-  commercial_register: (PDF File binary)
-  website: https://acme.com
-  industry: Software Development
+- **Request Payload (JSON):**
+  ```json
+  {
+    "company_name": "Acme Inc.",
+    "name": "Tarek Ali",
+    "email": "tarek@acme.com",
+    "password": "Password123!",
+    "password_confirmation": "Password123!",
+    "website": "https://acme.com",
+    "industry": "Software Development",
+    "contact_email": "contact@acme.com",
+    "contact_phone": "+201000000000",
+    "address": "Cairo, Egypt"
+  }
   ```
 - **Success Action (201):** Save token, show notification: *"Company registered! Awaiting admin verification."*, redirect to `/company/dashboard`.
 
