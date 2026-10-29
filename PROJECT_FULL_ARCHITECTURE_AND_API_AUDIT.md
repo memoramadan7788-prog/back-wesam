@@ -6,7 +6,7 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **120 API route entries** and **100 OpenAPI paths**, backed by **229 passing tests with 1283 assertions**. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **147 API route entries** and **120 OpenAPI paths**. Part B account/authentication tests pass; a full SQLite run currently has **236 passing tests and 11 known legacy fixture failures** unrelated to Part B. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
@@ -74,12 +74,13 @@ Platform administrators are isolated from the user RBAC tables. Their account, r
 | 53 | `chatbot_messages` | [2026_10_20_100047_create_chatbot_messages_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100047_create_chatbot_messages_table.php) | Messages exchanged in chatbot conversation | Full (`UID`, `LUID`, SoftDeletes) |
 | 54 | `countries` | [2026_10_20_100048_create_countries_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100048_create_countries_table.php) | ISO country codes and localized names | Full (`UID`, `LUID`, SoftDeletes) |
 | 55 | `personal_access_tokens` | [2026_10_21_062735_create_personal_access_tokens_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_21_062735_create_personal_access_tokens_table.php) | Laravel Sanctum API authentication tokens | Framework Token Store |
+| 56 | `email_verification_codes` | [2026_10_29_000001_create_email_verification_codes_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000001_create_email_verification_codes_table.php) | Hashed, expiring one-time email verification codes | User-owned, consumed timestamp |
 
 ---
 
-## 3. Currently Implemented APIs & Components (100% Operational)
+## 3. Currently Implemented APIs & Components
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 120 API route entries and is backed by the full feature test suite.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 147 API route entries and is backed by targeted feature tests.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -234,6 +235,15 @@ class UserAuthController extends Controller
 
     /** GET /api/auth/me */
     public function me(Request $request): UserResource;
+
+    /** POST /api/auth/email/verify */
+    public function verifyEmail(Request $request): JsonResponse;
+
+    /** POST /api/auth/email/resend */
+    public function resendEmailVerification(Request $request): JsonResponse;
+
+    /** PATCH /api/auth/me/preferences */
+    public function updatePreferences(Request $request): JsonResponse;
 }
 ```
 
@@ -253,11 +263,26 @@ class UserAuthController extends Controller
   'company_name'  => ['required', 'string', 'max:255', 'unique:companies,name'],
   'industry'      => ['nullable', 'string', 'max:100'],
   'website'       => ['nullable', 'url', 'max:2048'],
+  'contact_email' => ['nullable', 'email', 'max:255'],
+  'contact_phone' => ['nullable', 'string', 'max:30'],
+  'address'       => ['nullable', 'string', 'max:2000'],
   ```
 - **Logic Details:**
   - Candidate registration automatically assigns role `candidate` and creates a linked row in `candidate_profiles` with `account_status_id = 1` (Active).
   - Company registration creates the `users` row, creates the `companies` row with `status='pending'` and `owner_user_id = user.id`, and assigns role `company_admin`.
   - Token creation: `$token = $user->createToken('auth-token', [$user->account_type])->plainTextToken;`.
+
+#### E. Part B account and profile endpoints
+
+| HTTP Method | Route Endpoint | Authentication | Description |
+|:---|:---|:---|:---|
+| `POST` | `/api/auth/email/verify` | Public | Validates a six-digit code, consumes it once, and sets `users.email_verified_at`. |
+| `POST` | `/api/auth/email/resend` | Public | Sends a new code for an unverified account; limited to 3 requests per minute and returns `429` with `retry_after` when exceeded. |
+| `PATCH` | `/api/auth/me/preferences` | `auth:sanctum` | Updates `locale` and/or `theme`; theme is `system`, `light`, or `dark`. |
+| `POST` | `/api/candidate/profile/photo` | `auth:sanctum` | Stores a JPG/JPEG/PNG/WEBP profile photo up to 5 MB and returns its path and public URL. |
+| `DELETE` | `/api/candidate/profile/photo` | `auth:sanctum` | Deletes the stored candidate photo and clears `photo_path`. |
+
+Verification codes are stored hashed in `email_verification_codes`, expire after 10 minutes, and are never returned in an API response. The queued mail uses `EmailVerificationCodeMail`; production needs SMTP settings and a queue worker.
 
 ---
 
@@ -599,7 +624,7 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 ```text
 [x] Final physical tables migrated with audit trail and account status support; platform admins use the dedicated `admins` table and isolated admin RBAC tables.
 [x] Database seeders configured for the basic flow (Super Admin in the dedicated admins table, isolated admin RBAC, categories, skills, demo data)
-[x] 120 API route entries live in routes/api.php (100 OpenAPI paths)
+[x] 147 API route entries live in routes/api.php (120 OpenAPI paths)
 [x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json
 [x] Module 1: User Authentication (Candidate & Company registration, Sanctum auth)

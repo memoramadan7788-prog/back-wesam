@@ -3275,6 +3275,82 @@
                 }
             }
         },
+        "/candidate/profile/photo": {
+            "post": {
+                "operationId": "candidate.profile.photo.upload",
+                "summary": "POST /api/candidate/profile/photo",
+                "tags": [
+                    "CandidateProfile"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UploadProfilePhotoRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`CandidateProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/CandidateProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "candidate.profile.photo.delete",
+                "summary": "DELETE /api/candidate/profile/photo",
+                "tags": [
+                    "CandidateProfile"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Profile photo deleted successfully."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/candidate/notifications": {
             "get": {
                 "operationId": "candidate.notifications.index",
@@ -10795,6 +10871,157 @@
                 }
             }
         },
+        "/auth/email/verify": {
+            "post": {
+                "operationId": "auth.email.verify",
+                "summary": "POST /api/auth/email/verify",
+                "tags": [
+                    "UserAuth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "code"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Email verified successfully."
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/auth/email/resend": {
+            "post": {
+                "operationId": "auth.email.resend",
+                "summary": "POST /api/auth/email/resend",
+                "tags": [
+                    "UserAuth"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "required": [
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "If the email is registered, a verification code will be sent."
+                                                }
+                                            },
+                                            "required": [
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "If the email is registered and unverified, a verification code will be sent."
+                                                }
+                                            },
+                                            "required": [
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Too many verification requests. Please try again later."
+                                        },
+                                        "retry_after": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "retry_after"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/auth/logout": {
             "post": {
                 "operationId": "auth.logout",
@@ -10866,6 +11093,81 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/auth/me/preferences": {
+            "patch": {
+                "operationId": "auth.me.preferences",
+                "summary": "PATCH /api/auth/me/preferences",
+                "tags": [
+                    "UserAuth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "locale": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "theme": {
+                                        "type": "string",
+                                        "enum": [
+                                            "system",
+                                            "light",
+                                            "dark"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Preferences updated successfully."
+                                        },
+                                        "preferences": {
+                                            "type": "object",
+                                            "properties": {
+                                                "locale": {
+                                                    "type": "string"
+                                                },
+                                                "theme": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "locale",
+                                                "theme"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "preferences"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -12971,6 +13273,9 @@
                     "photo_path": {
                         "type": "string"
                     },
+                    "photo_url": {
+                        "type": "null"
+                    },
                     "years_experience": {
                         "type": "string"
                     },
@@ -13035,6 +13340,7 @@
                     "phone",
                     "location",
                     "photo_path",
+                    "photo_url",
                     "years_experience",
                     "has_no_experience"
                 ],
@@ -14394,6 +14700,28 @@
                         "format": "uri",
                         "maxLength": 2048
                     },
+                    "contact_email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "contact_phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 30
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    },
                     "password_confirmation": {
                         "type": "string",
                         "minLength": 8
@@ -15445,6 +15773,21 @@
                 ],
                 "title": "UploadCvRequest"
             },
+            "UploadProfilePhotoRequest": {
+                "type": "object",
+                "properties": {
+                    "photo": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 5120 kilobytes."
+                    }
+                },
+                "required": [
+                    "photo"
+                ],
+                "title": "UploadProfilePhotoRequest"
+            },
             "User": {
                 "type": "array",
                 "items": {
@@ -15474,6 +15817,18 @@
                     },
                     "account_status": {
                         "type": "string"
+                    },
+                    "locale": {
+                        "type": "string"
+                    },
+                    "theme": {
+                        "type": "string"
+                    },
+                    "email_verified_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "roles": {
                         "type": "array",
@@ -15541,6 +15896,9 @@
                     "account_type",
                     "account_status_id",
                     "account_status",
+                    "locale",
+                    "theme",
+                    "email_verified_at",
                     "company",
                     "created_at"
                 ],

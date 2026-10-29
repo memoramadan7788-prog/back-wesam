@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @mixin \App\Models\CandidateProfile
@@ -22,6 +23,7 @@ class CandidateProfileResource extends JsonResource
             'phone'             => $this->phone,
             'location'          => $this->location,
             'photo_path'        => $this->photo_path,
+            'photo_url'         => $this->photo_path ? Storage::disk('public')->url($this->photo_path) : null,
             'years_experience'  => $this->years_experience,
             'has_no_experience' => (bool) $this->has_no_experience,
             'skills'            => $this->whenLoaded('skills', fn () => $this->skills->map(fn ($s) => [

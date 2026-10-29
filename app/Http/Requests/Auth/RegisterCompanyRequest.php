@@ -20,6 +20,9 @@ class RegisterCompanyRequest extends FormRequest
             'company_name' => ['required', 'string', 'max:255', 'unique:companies,name'],
             'industry'     => ['nullable', 'string', 'max:100'],
             'website'      => ['nullable', 'url', 'max:2048'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:30'],
+            'address'       => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

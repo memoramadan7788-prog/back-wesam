@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api\Candidate;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Candidate\UpdateProfileRequest;
+use App\Http\Requests\Candidate\UploadProfilePhotoRequest;
 use App\Http\Resources\CandidateProfileResource;
 use App\Models\CandidateProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CandidateProfileController extends Controller
 {
@@ -39,6 +41,40 @@ class CandidateProfileController extends Controller
         return (new CandidateProfileResource(
             $profile->load(['user', 'skills', 'candidateExperiences', 'candidateEducations', 'candidateCvs'])
         ))->response()->setStatusCode(200);
+    }
+
+    /**
+     * POST /api/candidate/profile/photo
+     */
+    public function uploadPhoto(UploadProfilePhotoRequest $request): JsonResponse
+    {
+        $profile = CandidateProfile::firstOrCreate(['user_id' => $request->user()->id]);
+
+        if ($profile->photo_path) {
+            Storage::disk('public')->delete($profile->photo_path);
+        }
+
+        $path = $request->file('photo')->store("candidate-photos/{$request->user()->id}", 'public');
+        $profile->update(['photo_path' => $path]);
+
+        return (new CandidateProfileResource(
+            $profile->fresh()->load('user')
+        ))->response()->setStatusCode(201);
+    }
+
+    /**
+     * DELETE /api/candidate/profile/photo
+     */
+    public function deletePhoto(Request $request): JsonResponse
+    {
+        $profile = CandidateProfile::where('user_id', $request->user()->id)->firstOrFail();
+
+        if ($profile->photo_path) {
+            Storage::disk('public')->delete($profile->photo_path);
+            $profile->update(['photo_path' => null]);
+        }
+
+        return response()->json(['message' => 'Profile photo deleted successfully.'], 200);
     }
 
     /**

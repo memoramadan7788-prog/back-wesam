@@ -68,6 +68,11 @@ public function country(): BelongsTo
         return $this->hasOne(CandidateProfile::class, 'user_id');
     }
 
+    public function emailVerificationCodes(): HasMany
+    {
+        return $this->hasMany(EmailVerificationCode::class);
+    }
+
     public function companyEmployee(): HasOne
     {
         return $this->hasOne(CompanyEmployee::class, 'user_id');

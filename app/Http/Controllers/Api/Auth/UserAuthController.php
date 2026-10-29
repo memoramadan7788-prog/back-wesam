@@ -14,11 +14,13 @@ use App\Models\CandidateProfile;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\EmailVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -27,7 +29,7 @@ class UserAuthController extends Controller
     /**
      * POST /api/auth/register/candidate
      */
-    public function registerCandidate(RegisterCandidateRequest $request): JsonResponse
+    public function registerCandidate(RegisterCandidateRequest $request, EmailVerificationService $verificationService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -55,6 +57,7 @@ class UserAuthController extends Controller
         });
 
         $token = $user->createToken('candidate-token', ['candidate'])->plainTextToken;
+        $verificationService->issueAndSend($user, false);
 
         return response()->json([
             'message' => 'Candidate registered successfully.',
@@ -68,7 +71,7 @@ class UserAuthController extends Controller
     /**
      * POST /api/auth/register/company
      */
-    public function registerCompany(RegisterCompanyRequest $request): JsonResponse
+    public function registerCompany(RegisterCompanyRequest $request, EmailVerificationService $verificationService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -85,6 +88,9 @@ class UserAuthController extends Controller
                 'name'              => $validated['company_name'],
                 'industry'          => $validated['industry'] ?? null,
                 'website'           => $validated['website'] ?? null,
+                'contact_email'     => $validated['contact_email'] ?? null,
+                'contact_phone'     => $validated['contact_phone'] ?? null,
+                'address'           => $validated['address'] ?? null,
                 'status'            => 'pending',
                 'account_status_id' => AccountStatus::ACTIVE,
                 'owner_user_id'     => $user->id,
@@ -103,6 +109,7 @@ class UserAuthController extends Controller
 
         $user = $data['user'];
         $token = $user->createToken('company-token', ['company'])->plainTextToken;
+        $verificationService->issueAndSend($user, false);
 
         return response()->json([
             'message' => 'Company registered successfully. Account pending review.',
@@ -117,7 +124,7 @@ class UserAuthController extends Controller
     /**
      * POST /api/auth/register/employee
      */
-    public function registerEmployee(RegisterEmployeeRequest $request): JsonResponse
+    public function registerEmployee(RegisterEmployeeRequest $request, EmailVerificationService $verificationService): JsonResponse
     {
         $validated = $request->validated();
 
@@ -130,6 +137,7 @@ class UserAuthController extends Controller
         ]);
 
         $token = $user->createToken('employee-token', ['company'])->plainTextToken;
+        $verificationService->issueAndSend($user, false);
 
         return response()->json([
             'message'      => 'Employee account registered successfully. Please submit a join request to your company.',
@@ -204,6 +212,92 @@ class UserAuthController extends Controller
                 'companyEmployee.company',
             ])
         );
+    }
+
+    /**
+     * POST /api/auth/email/verify
+     */
+    public function verifyEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'digits:6'],
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+        $verification = $user?->emailVerificationCodes()
+            ->whereNull('consumed_at')
+            ->latest('id')
+            ->first();
+
+        if (! $user || ! $verification || $verification->expires_at->isPast()
+            || ! Hash::check($validated['code'], $verification->code_hash)) {
+            return response()->json([
+                'message' => 'The verification code is invalid or expired.',
+            ], 422);
+        }
+
+        $verification->update(['consumed_at' => now()]);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return response()->json([
+            'message' => 'Email verified successfully.',
+            'user' => new UserResource($user->fresh()),
+        ], 200);
+    }
+
+    /**
+     * POST /api/auth/email/resend
+     */
+    public function resendEmailVerification(Request $request, EmailVerificationService $verificationService): JsonResponse
+    {
+        $validated = $request->validate(['email' => ['required', 'email']]);
+        $user = User::where('email', $validated['email'])->first();
+
+        if (! $user || $user->email_verified_at) {
+            return response()->json([
+                'message' => 'If the email is registered and unverified, a verification code will be sent.',
+            ], 200);
+        }
+
+        if (! $verificationService->canResend($user)) {
+            return response()->json([
+                'message' => 'Too many verification requests. Please try again later.',
+                'retry_after' => $verificationService->retryAfter($user),
+            ], 429);
+        }
+
+        $verificationService->issueAndSend($user);
+
+        return response()->json([
+            'message' => 'If the email is registered, a verification code will be sent.',
+        ], 200);
+    }
+
+    /**
+     * PATCH /api/auth/me/preferences
+     */
+    public function updatePreferences(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'locale' => ['sometimes', 'string', 'max:10'],
+            'theme' => ['sometimes', Rule::in(['system', 'light', 'dark'])],
+        ]);
+
+        if ($validated === []) {
+            return response()->json(['message' => 'At least one preference is required.'], 422);
+        }
+
+        $user = $request->user();
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Preferences updated successfully.',
+            'preferences' => [
+                'locale' => $user->locale,
+                'theme' => $user->theme,
+            ],
+        ], 200);
     }
 
     /**

@@ -39,6 +39,11 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api/salary-benchmark` | `market_summary`, `records` |
 | `POST /api/auth/register/candidate` | `user`, `access_token`, `token`, `token_type` |
 | `POST /api/auth/register/company` | `user`, `company`, `access_token`, `token`, `token_type` |
+| `POST /api/auth/email/verify` | `message`, `user` |
+| `POST /api/auth/email/resend` | `message` (rate-limit errors also include `retry_after`) |
+| `PATCH /api/auth/me/preferences` | `message`, `preferences` |
+| `POST /api/candidate/profile/photo` | `data` (`CandidateProfileResource`) |
+| `DELETE /api/candidate/profile/photo` | `message` |
 | `POST /api/auth/register/employee` | `user`, `access_token`, `token` |
 | `POST /api/auth/login`, `POST /api/admin/login` | `access_token`, `token`, `token_type`; user login also returns `user`, admin login returns `admin` |
 | `GET /api/auth/me` | `data` |
@@ -145,6 +150,26 @@ flowchart TD
   industry: Software Development
   ```
 - **Success Action (201):** Save token, show notification: *"Company registered! Awaiting admin verification."*, redirect to `/company/dashboard`.
+
+The optional contact fields accepted by this endpoint are `contact_email`, `contact_phone`, and `address`.
+
+#### Screen 2a: Email Verification
+- **Resend code:** `POST /api/auth/email/resend` with `{ "email": "tarek@acme.com" }`.
+- **Verify code:** `POST /api/auth/email/verify` with `{ "email": "tarek@acme.com", "code": "123456" }`.
+- The code is six digits, expires after 10 minutes, and can be used once. Resend is limited to 3 requests per minute per user.
+- Successful verification returns `200`, sets `user.email_verified_at`, and returns the updated user.
+- Unknown/already-verified resend requests return a generic `200`; invalid or expired codes return `422`; rate-limited resend returns `429` with `retry_after` seconds.
+- Real email delivery requires SMTP/mail configuration and a running queue worker because the verification mailable is queued.
+
+#### Screen 2b: Account Preferences
+- **Method & Route:** `PATCH /api/auth/me/preferences` (Bearer token required)
+- **Payload:** `{ "locale": "en", "theme": "dark" }`
+- Both fields are optional, but at least one is required. `theme` accepts `system`, `light`, or `dark`. The response key is `preferences`.
+
+#### Screen 2c: Candidate Profile Photo
+- **Upload:** `POST /api/candidate/profile/photo` (Bearer token, `multipart/form-data`), form field `photo` (JPG/JPEG/PNG/WEBP, maximum 5 MB).
+- **Delete:** `DELETE /api/candidate/profile/photo` (Bearer token).
+- Upload returns `201` with `data.photo_path` and `data.photo_url`; delete clears the stored file and returns `200` with `message`.
 
 #### Screen 3: User Login (`/login`)
 - **Trigger / Button:** Click **"Log In"**

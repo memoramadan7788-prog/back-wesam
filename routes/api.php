@@ -94,10 +94,13 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
     Route::post('/register/company', [UserAuthController::class, 'registerCompany'])->name('register.company');
     Route::post('/register/employee', [UserAuthController::class, 'registerEmployee'])->name('register.employee');
     Route::post('/login', [UserAuthController::class, 'login'])->name('login');
+    Route::post('/email/verify', [UserAuthController::class, 'verifyEmail'])->name('email.verify');
+    Route::post('/email/resend', [UserAuthController::class, 'resendEmailVerification'])->name('email.resend');
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [UserAuthController::class, 'logout'])->name('logout');
         Route::get('/me', [UserAuthController::class, 'me'])->name('me');
+        Route::patch('/me/preferences', [UserAuthController::class, 'updatePreferences'])->name('me.preferences');
         Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
         Route::delete('/account', [UserAuthController::class, 'deleteAccount'])->name('account.delete');
     });
@@ -185,6 +188,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Profile & Password
         Route::get('/profile', [CandidateProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [CandidateProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profile/photo', [CandidateProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
+        Route::delete('/profile/photo', [CandidateProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
         Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
         Route::delete('/account', [UserAuthController::class, 'deleteAccount'])->name('account.delete');
 

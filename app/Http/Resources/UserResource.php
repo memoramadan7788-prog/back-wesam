@@ -21,6 +21,9 @@ class UserResource extends JsonResource
             'account_type'       => $this->account_type,
             'account_status_id'  => $this->account_status_id,
             'account_status'     => $this->accountStatus?->name,
+            'locale'             => $this->locale,
+            'theme'              => $this->theme,
+            'email_verified_at'  => $this->email_verified_at?->toIso8601String(),
             'roles'              => $this->whenLoaded('roles', fn () => $this->roles->pluck('name')),
             'permissions'        => $this->whenLoaded('roles', fn () => $this->getAllPermissions()),
             'company'            => $company ? [
