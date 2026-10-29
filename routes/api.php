@@ -33,6 +33,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
+use App\Http\Controllers\Api\Admin\CompanyDetailsController;
+use App\Http\Controllers\Api\Company\CompanyProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -130,6 +132,13 @@ Route::prefix('admin')->group(function () {
             Route::get('/companies/{id}', [CompanyManagementController::class, 'show'])->name('admin.companies.show');
             Route::post('/companies/{id}/approve', [CompanyManagementController::class, 'approve'])->name('admin.companies.approve');
             Route::post('/companies/{id}/reject', [CompanyManagementController::class, 'reject'])->name('admin.companies.reject');
+
+            // Company details, editing and documents
+            Route::get('/companies/{id}/details', [CompanyDetailsController::class, 'show'])->name('admin.companies.details');
+            Route::put('/companies/{id}', [CompanyDetailsController::class, 'update'])->name('admin.companies.update');
+            Route::post('/companies/{id}/documents', [CompanyDetailsController::class, 'storeDocument'])->name('admin.companies.documents.store');
+            Route::get('/companies/{id}/documents/{docId}/download', [CompanyDetailsController::class, 'downloadDocument'])->name('admin.companies.documents.download');
+            Route::delete('/companies/{id}/documents/{docId}', [CompanyDetailsController::class, 'destroyDocument'])->name('admin.companies.documents.destroy');
         });
 
         // Company suspension (permission: companies.suspend)
@@ -245,10 +254,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::delete('/availabilities/{id}', [InterviewerAvailabilityController::class, 'destroy'])->name('availabilities.destroy');
     });
 
-
+    // 4a. Company profile & documents (NOT behind company.active: a pending company must upload its papers)
+    Route::prefix('company')->name('api.company.profile.')->group(function () {
+        Route::get('/profile', [CompanyProfileController::class, 'show'])->name('show');
+        Route::put('/profile', [CompanyProfileController::class, 'update'])->name('update');
+        Route::get('/documents', [CompanyProfileController::class, 'documents'])->name('documents.index');
+        Route::post('/documents', [CompanyProfileController::class, 'storeDocument'])->name('documents.store');
+        Route::get('/documents/{id}/download', [CompanyProfileController::class, 'downloadDocument'])->name('documents.download');
+        Route::delete('/documents/{id}', [CompanyProfileController::class, 'destroyDocument'])->name('documents.destroy');
+    });
 
     // 4. Company HR & Employer Portal
-    
     Route::prefix('company')->name('api.company.')->middleware('company.active')->group(function () {
         // Employees & Interviewer Onboarding (Package 2)
         Route::post('/join-requests', [CompanyEmployeeController::class, 'storeJoinRequest'])->name('employees.join');
@@ -264,13 +280,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         });
 
         Route::middleware('permission:employees.manage')->group(function () {
+            Route::match(['put', 'patch'], '/employees/{id}', [CompanyEmployeeController::class, 'update'])->name('employees.update');
             Route::delete('/employees/{id}', [CompanyEmployeeController::class, 'destroy'])->name('employees.destroy');
         });
-
-        Route::match(['put', 'patch'], '/employees/{id}', [CompanyEmployeeController::class, 'update'])->name('employees.update');
-
-
-
 
         // Jobs Management
         Route::get('/jobs', [CompanyJobController::class, 'index'])->name('jobs.index');
