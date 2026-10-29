@@ -35,6 +35,7 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api` | `status`, `message` |
 | `GET /api/hello` | `message` |
 | `GET /api/jobs`, `GET /api/jobs/{job}` | `data` |
+| `GET /api/jobs/{jobId}/screening-questions` | `data` |
 | `GET /api/companies`, `GET /api/companies/{id}`, `GET /api/companies/{id}/jobs` | `data` |
 | `GET /api/public/featured` | `featured_companies`, `featured_jobs`, `counts` |
 | `GET /api/job-categories`, `GET /api/skills`, `GET /api/countries` | `data` |
@@ -59,7 +60,8 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api/candidate/recommended-jobs`, `GET /api/candidate/saved-jobs` | `data` |
 | `POST /api/candidate/recommended-jobs/{jobId}/hide` | `data`, `message` |
 | Candidate CV, experience and education CRUD endpoints | `data` for resources/collections; delete endpoints return `message` |
-| `GET /api/candidate/applications`, `GET /api/candidate/applications/{id}` | `data` |
+| `GET /api/candidate/applications`, `GET /api/candidate/applications/{id}`, `GET /api/candidate/applications/{id}/activity` | `data` |
+| `GET|PUT /api/candidate/application-drafts/{jobId}` | `data` |
 | `POST /api/jobs/{jobId}/apply`, `PATCH /api/company/applications/{id}/status` | `application` |
 | `DELETE /api/candidate/applications/{id}/withdraw` | `message` |
 | Candidate interview list/detail/book/reschedule/cancel endpoints | `data` |
@@ -368,9 +370,14 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
     {
       "cover_note": "I have 5 years experience matching all required qualifications.",
       "cv_id": 4,
+      "answers": [{"question_id": 12, "answer": "Five years"}],
+      "expected_salary": 25000,
+      "portfolio_url": "https://portfolio.example/candidate",
+      "keep_in_talent_pool": true,
       "consent": true
     }
     ```
+  - `answers[]` must reference screening questions returned by `GET /api/jobs/{jobId}/screening-questions`. Required questions must have `answer`, `value`, or `selected_option_ids` populated. The selected CV is verified as belonging to the authenticated candidate.
   - **Success Action (201):** Show modal: *"Application submitted successfully!"*, disable button, display status badge: `"Submitted"`.
   - **Error Action (409 Conflict):** Show alert: *"You already have an active application for this job."*
 
@@ -394,6 +401,13 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
 - **Recommendations:** `GET /api/candidate/recommended-jobs?hide_irrelevant=true&include_applied=true`. Each job includes `why_it_fits` (array of reasons), `already_applied`/`applied_by_me`, and `hide_irrelevant` is enabled by default. `include_applied` is optional and defaults to `false` for compatibility.
 - **Hide a recommendation:** `POST /api/candidate/recommended-jobs/{jobId}/hide` with optional `{ "reason": "Not relevant" }`. The operation is idempotent for the same candidate/job.
 - **Saved jobs:** `GET /api/candidate/saved-jobs?work_model=remote&sort=updated_desc`. Supported sort values are `updated_desc` and `title_asc`; each result includes `updated_since_saved` and `updated_since_saved_reason`.
+
+#### Screen 9c: Application Draft and Activity Views
+- **Screening questions:** `GET /api/jobs/{jobId}/screening-questions` returns ordered job-specific questions with `type`, `options`, and `is_required`.
+- **Save draft:** `PUT /api/candidate/application-drafts/{jobId}` accepts the same application fields without requiring final consent. It returns the draft under `data` with HTTP 200. The draft is unique per candidate/job.
+- **Read draft:** `GET /api/candidate/application-drafts/{jobId}` returns the candidate-owned draft under `data`; missing drafts return 404.
+- **Application details:** `GET /api/candidate/applications/{id}` now includes `timeline`, `next_interview`, `hiring_contacts`, `submitted_documents`, hiring model, requisition code, and submitted application fields. Ownership is enforced by the authenticated candidate.
+- **Activity tab:** `GET /api/candidate/applications/{id}/activity` returns a chronological `data` array containing status changes, interviews, and offers. Another candidate receives 404.
 
 #### Screen 10: Candidate Applications Tracker (`/candidate/applications`)
 - **Event: Page Load**

@@ -1498,6 +1498,51 @@
                 }
             }
         },
+        "/candidate/applications/{id}/activity": {
+            "get": {
+                "operationId": "candidate.applications.activity",
+                "summary": "GET /api/candidate/applications/{id}/activity",
+                "tags": [
+                    "CandidateApplication"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/candidate/applications/{id}": {
             "get": {
                 "operationId": "candidate.applications.show",
@@ -1611,54 +1656,12 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Application submitted successfully."
-                                        },
-                                        "application": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/components/schemas/ApplicationDetailResource"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "required": [
-                                                        "history"
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "message",
-                                        "application"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "You already have an active application for this position."
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1668,6 +1671,101 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/candidate/application-drafts/{jobId}": {
+            "get": {
+                "operationId": "candidate.application-drafts.show",
+                "tags": [
+                    "CandidateApplicationDraft"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ApplicationDraftResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ApplicationDraftResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidate.application-drafts.update",
+                "tags": [
+                    "CandidateApplicationDraft"
+                ],
+                "parameters": [
+                    {
+                        "name": "jobId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SubmitApplicationDraftRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/ApplicationDraftResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -11488,6 +11586,48 @@
                 }
             }
         },
+        "/jobs/{job}/screening-questions": {
+            "get": {
+                "operationId": "jobs.screening-questions",
+                "summary": "GET /api/jobs/{job}/screening-questions",
+                "tags": [
+                    "JobScreeningQuestion"
+                ],
+                "parameters": [
+                    {
+                        "name": "job",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `JobScreeningQuestionResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/JobScreeningQuestionResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/job-categories": {
             "get": {
                 "operationId": "lookups.categories",
@@ -14301,13 +14441,45 @@
                             },
                             "location": {
                                 "type": "string"
+                            },
+                            "hiring_model": {
+                                "type": "string"
+                            },
+                            "requisition_code": {
+                                "type": "string"
+                            },
+                            "salary": {
+                                "type": "object",
+                                "properties": {
+                                    "min": {
+                                        "type": "string"
+                                    },
+                                    "max": {
+                                        "type": "string"
+                                    },
+                                    "currency": {
+                                        "type": "string"
+                                    },
+                                    "period": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "min",
+                                    "max",
+                                    "currency",
+                                    "period"
+                                ]
                             }
                         },
                         "required": [
                             "id",
                             "title",
                             "company",
-                            "location"
+                            "location",
+                            "hiring_model",
+                            "requisition_code",
+                            "salary"
                         ]
                     },
                     "candidate_id": {
@@ -14387,6 +14559,30 @@
                     "cover_note": {
                         "type": "string"
                     },
+                    "answers": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0
+                            }
+                        ]
+                    },
+                    "expected_salary": {
+                        "type": "string"
+                    },
+                    "portfolio_url": {
+                        "type": "string"
+                    },
+                    "keep_in_talent_pool": {
+                        "type": "boolean"
+                    },
                     "status": {
                         "type": "string"
                     },
@@ -14395,6 +14591,97 @@
                     },
                     "history": {
                         "type": "string"
+                    },
+                    "timeline": {
+                        "type": "string"
+                    },
+                    "next_interview": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "round_no": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "interview_type": {
+                                "type": "string"
+                            },
+                            "start_at": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "end_at": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "location": {
+                                "type": "string"
+                            },
+                            "meeting_link": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "round_no",
+                            "status",
+                            "interview_type",
+                            "start_at",
+                            "end_at",
+                            "location",
+                            "meeting_link"
+                        ]
+                    },
+                    "hiring_contacts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "submitted_documents": {
+                        "type": "object",
+                        "properties": {
+                            "cv": {
+                                "type": [
+                                    "object",
+                                    "null"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "type": "string"
+                                    },
+                                    "version": {
+                                        "type": "string"
+                                    },
+                                    "original_filename": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "version",
+                                    "original_filename"
+                                ]
+                            },
+                            "portfolio_url": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "cv",
+                            "portfolio_url"
+                        ]
                     },
                     "applied_at": {
                         "type": [
@@ -14417,12 +14704,91 @@
                     "candidate",
                     "cv",
                     "cover_note",
+                    "answers",
+                    "expected_salary",
+                    "portfolio_url",
+                    "keep_in_talent_pool",
                     "status",
                     "attempt_no",
+                    "submitted_documents",
                     "applied_at",
                     "withdrawn_at"
                 ],
                 "title": "ApplicationDetailResource"
+            },
+            "ApplicationDraftResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "job_id": {
+                        "type": "string"
+                    },
+                    "job_title": {
+                        "type": "string"
+                    },
+                    "cv_id": {
+                        "type": "string"
+                    },
+                    "answers": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0
+                            }
+                        ]
+                    },
+                    "expected_salary": {
+                        "type": "string"
+                    },
+                    "portfolio_url": {
+                        "type": "string"
+                    },
+                    "cover_note": {
+                        "type": "string"
+                    },
+                    "keep_in_talent_pool": {
+                        "type": "boolean"
+                    },
+                    "consent": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "job_id",
+                    "job_title",
+                    "cv_id",
+                    "answers",
+                    "expected_salary",
+                    "portfolio_url",
+                    "cover_note",
+                    "keep_in_talent_pool",
+                    "consent",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ApplicationDraftResource"
             },
             "ApplicationResource": {
                 "type": "object",
@@ -16701,6 +17067,54 @@
                 ],
                 "title": "JobResource"
             },
+            "JobScreeningQuestionResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "job_id": {
+                        "type": "string"
+                    },
+                    "question": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "options": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 0,
+                                "maxItems": 0
+                            }
+                        ]
+                    },
+                    "is_required": {
+                        "type": "boolean"
+                    },
+                    "sort_order": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "job_id",
+                    "question",
+                    "type",
+                    "options",
+                    "is_required",
+                    "sort_order"
+                ],
+                "title": "JobScreeningQuestionResource"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -17599,6 +18013,79 @@
                 ],
                 "title": "StoreSavedSearchRequest"
             },
+            "SubmitApplicationDraftRequest": {
+                "type": "object",
+                "properties": {
+                    "cv_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question_id": {
+                                    "type": "integer"
+                                },
+                                "answer": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "value": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "selected_option_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "maxItems": 100
+                    },
+                    "expected_salary": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "portfolio_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "cover_note": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 3000
+                    },
+                    "keep_in_talent_pool": {
+                        "type": "boolean"
+                    },
+                    "consent": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "SubmitApplicationDraftRequest"
+            },
             "SubmitApplicationRequest": {
                 "type": "object",
                 "properties": {
@@ -17614,6 +18101,57 @@
                             "null"
                         ],
                         "maxLength": 3000
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "question_id": {
+                                    "type": "integer"
+                                },
+                                "answer": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "value": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "selected_option_ids": {
+                                    "type": [
+                                        "array",
+                                        "null"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "maxItems": 100
+                    },
+                    "expected_salary": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "portfolio_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri",
+                        "maxLength": 2048
+                    },
+                    "keep_in_talent_pool": {
+                        "type": "boolean"
                     },
                     "consent": {
                         "enum": [

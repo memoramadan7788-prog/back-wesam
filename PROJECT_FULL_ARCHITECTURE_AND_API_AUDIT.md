@@ -6,12 +6,12 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **165 API route entries** and **133 OpenAPI paths**. Part D discovery tests pass; the focused discovery regression suite has **27 passing tests and 242 assertions** on SQLite. The full suite still has known legacy fixture failures unrelated to this Part D change. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **169 API route entries** and **136 OpenAPI paths**. Part E application-flow tests pass; the focused Part E suite has **9 passing tests and 54 assertions** on SQLite. The full suite still has known legacy fixture failures unrelated to this Part E change. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
 
-## 2. Complete Database Catalog (All 62 Tables)
+## 2. Complete Database Catalog (All 64 Tables)
 
 Every table below is created by Laravel migrations. The complete migration-and-seeding flow is verified by the setup feature test with SQLite; run the same commands against MySQL for local development. Application tables include audit columns (`UID`, `LUID`, `created_at`, `updated_at`, `deleted_at`).
 
@@ -81,12 +81,14 @@ Platform administrators are isolated from the user RBAC tables. Their account, r
 | 60 | `candidate_privacy_settings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate profile visibility and recruiter consent | Candidate-owned |
 | 61 | `candidate_saved_searches` | [2026_10_29_000004_create_candidate_discovery_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000004_create_candidate_discovery_tables.php) | Candidate saved job searches, weekly alerts, and pause state | Candidate-owned |
 | 62 | `candidate_hidden_jobs` | [2026_10_29_000004_create_candidate_discovery_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000004_create_candidate_discovery_tables.php) | Candidate hidden/irrelevant recommendation records | Candidate-owned |
+| 63 | `job_screening_questions` | [2026_10_29_000005_create_job_screening_questions_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000005_create_job_screening_questions_table.php) | Job-specific application screening questions and options | Job-owned |
+| 64 | `candidate_application_drafts` | [2026_10_29_000006_create_candidate_application_drafts_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000006_create_candidate_application_drafts_table.php) | Candidate draft answers and application fields per job | Candidate-owned |
 
 ---
 
 ## 3. Currently Implemented APIs & Components
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 165 API route entries and is backed by targeted feature tests.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 169 API route entries and is backed by targeted feature tests.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -115,6 +117,18 @@ Part D extends this module with repeated-array filters (`employment_type[]`, `wo
 | `GET` | `/api/candidate/saved-jobs` | `auth:sanctum` | Saved jobs with work-model filtering, sorting, and freshness metadata. |
 
 The Part D migrations add `jobs.requisition_code`, `jobs.hiring_model`, public company-about fields (`description`, `culture`, `benefits`, `locations`), and the candidate discovery tables `candidate_saved_searches` and `candidate_hidden_jobs`.
+
+### 3.1b. Candidate Application Flow Module
+
+| HTTP Method | Route Endpoint | Authentication | Description |
+|:---|:---|:---|:---|
+| `GET` | `/api/jobs/{jobId}/screening-questions` | Public | Return ordered, job-specific screening questions and options for the application form. |
+| `POST` | `/api/jobs/{jobId}/apply` | `auth:sanctum` | Submit answers, CV, expected salary, portfolio URL, consent, and talent-pool preference. Screening question and CV ownership are validated. |
+| `GET|PUT` | `/api/candidate/application-drafts/{jobId}` | `auth:sanctum` | Read or save one candidate-owned draft per job. Draft saves do not require final consent. |
+| `GET` | `/api/candidate/applications/{id}` | `auth:sanctum` | Return candidate-owned application details with timeline, next interview, hiring contacts, submitted documents, and hiring model. |
+| `GET` | `/api/candidate/applications/{id}/activity` | `auth:sanctum` | Return chronological status, interview, and offer activity for the candidate's application. |
+
+Application records now persist `answers`, `expected_salary`, `portfolio_url`, and `keep_in_talent_pool`. The `job_screening_questions` and `candidate_application_drafts` tables support the Figma 16 application form without reusing the unrelated technical-exam question tables.
 
 ### 3.2. Admin Authentication Module
 - **Controllers:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php), [`App\Http\Controllers\Api\Admin\AdminAnalyticsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAnalyticsController.php)

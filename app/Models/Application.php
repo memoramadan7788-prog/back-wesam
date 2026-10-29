@@ -16,6 +16,9 @@ class Application extends Model
     protected $guarded = [];
 
     protected $casts = [
+        'answers' => 'array',
+        'expected_salary' => 'decimal:2',
+        'keep_in_talent_pool' => 'boolean',
         'consent_at' => 'datetime',
         'applied_at' => 'datetime',
         'withdrawn_at' => 'datetime',
@@ -74,5 +77,10 @@ class Application extends Model
     public function cvMatchResults(): HasMany
     {
         return $this->hasMany(CvMatchResult::class, 'application_id');
+    }
+
+    public function screeningAnswers(): HasMany
+    {
+        return $this->hasMany(JobScreeningQuestion::class, 'job_id', 'job_id');
     }
 }

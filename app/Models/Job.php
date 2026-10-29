@@ -61,6 +61,16 @@ class Job extends Model
         return $this->hasMany(Application::class, 'job_id');
     }
 
+    public function screeningQuestions(): HasMany
+    {
+        return $this->hasMany(JobScreeningQuestion::class, 'job_id')->orderBy('sort_order');
+    }
+
+    public function applicationDrafts(): HasMany
+    {
+        return $this->hasMany(CandidateApplicationDraft::class, 'job_id');
+    }
+
     public function salaryRecommendations(): HasMany
     {
         return $this->hasMany(SalaryRecommendation::class, 'job_id');

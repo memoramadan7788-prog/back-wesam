@@ -66,6 +66,11 @@ class CandidateProfile extends Model
         return $this->hasMany(Application::class, 'candidate_id');
     }
 
+    public function applicationDrafts(): HasMany
+    {
+        return $this->hasMany(CandidateApplicationDraft::class, 'candidate_id');
+    }
+
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class, 'candidate_skills', 'candidate_id', 'skill_id')->withPivot('level');

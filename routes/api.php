@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\CompanyManagementController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Application\CandidateApplicationController;
+use App\Http\Controllers\Api\Application\CandidateApplicationDraftController;
 use App\Http\Controllers\Api\Application\CompanyApplicationController;
 use App\Http\Controllers\Api\Auth\UserAuthController;
 use App\Http\Controllers\Api\Candidate\CandidateCvController;
@@ -32,6 +33,7 @@ use App\Http\Controllers\Api\InterviewerAvailabilityController;
 use App\Http\Controllers\Api\InterviewerInterviewController;
 use App\Http\Controllers\Api\InterviewSchedulingController;
 use App\Http\Controllers\Api\JobController;
+use App\Http\Controllers\Api\JobScreeningQuestionController;
 use App\Http\Controllers\Api\Offer\OfferController;
 use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
@@ -72,6 +74,7 @@ Route::get('/hello', function () {
 */
 Route::middleware('throttle:60,1')->prefix('jobs')->name('jobs.')->group(function () {
     Route::get('/', [JobController::class, 'index'])->name('index');
+    Route::get('{job}/screening-questions', [JobScreeningQuestionController::class, 'index'])->whereNumber('job')->name('screening-questions');
     Route::get('{job}', [JobController::class, 'show'])->whereNumber('job')->name('show');
 });
 
@@ -249,8 +252,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Applications
         Route::get('/applications', [CandidateApplicationController::class, 'index'])->name('applications.index');
-        Route::get('/applications/{id}', [CandidateApplicationController::class, 'show'])->name('applications.show');
+        Route::get('/applications/{id}/activity', [CandidateApplicationController::class, 'activity'])->whereNumber('id')->name('applications.activity');
+        Route::get('/applications/{id}', [CandidateApplicationController::class, 'show'])->whereNumber('id')->name('applications.show');
         Route::delete('/applications/{id}/withdraw', [CandidateApplicationController::class, 'withdraw'])->name('applications.withdraw');
+
+        // Application drafts
+        Route::get('/application-drafts/{jobId}', [CandidateApplicationDraftController::class, 'show'])->whereNumber('jobId')->name('application-drafts.show');
+        Route::put('/application-drafts/{jobId}', [CandidateApplicationDraftController::class, 'update'])->whereNumber('jobId')->name('application-drafts.update');
 
         // Recommended Jobs (#12)
         Route::get('/recommended-jobs', [CandidateRecommendedJobController::class, 'index'])->name('recommended-jobs.index');
