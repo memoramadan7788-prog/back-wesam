@@ -11,6 +11,9 @@ use App\Http\Controllers\Api\Candidate\CandidateCvController;
 use App\Http\Controllers\Api\Candidate\CandidateEducationController;
 use App\Http\Controllers\Api\Candidate\CandidateExperienceController;
 use App\Http\Controllers\Api\Candidate\CandidateProfileController;
+use App\Http\Controllers\Api\Candidate\CandidateProfilePreviewController;
+use App\Http\Controllers\Api\Candidate\CandidateDashboardController;
+use App\Http\Controllers\Api\Candidate\CandidateSettingsController;
 use App\Http\Controllers\Api\Candidate\CandidateRecommendedJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSavedJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSkillController;
@@ -185,9 +188,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 1. Candidate Portal
     Route::prefix('candidate')->name('api.candidate.')->group(function () {
+        Route::get('/dashboard', [CandidateDashboardController::class, 'index'])->name('dashboard');
+
         // Profile & Password
         Route::get('/profile', [CandidateProfileController::class, 'show'])->name('profile.show');
         Route::put('/profile', [CandidateProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/preview', [CandidateProfilePreviewController::class, 'show'])->name('profile.preview');
         Route::post('/profile/photo', [CandidateProfileController::class, 'uploadPhoto'])->name('profile.photo.upload');
         Route::delete('/profile/photo', [CandidateProfileController::class, 'deletePhoto'])->name('profile.photo.delete');
         Route::put('/change-password', [UserAuthController::class, 'changePassword'])->name('change-password');
@@ -211,11 +217,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Experiences & Educations
         Route::get('/experiences', [CandidateExperienceController::class, 'index'])->name('experiences.index');
         Route::post('/experiences', [CandidateExperienceController::class, 'store'])->name('experiences.store');
+        Route::put('/experiences/{id}', [CandidateExperienceController::class, 'update'])->name('experiences.update');
         Route::delete('/experiences/{id}', [CandidateExperienceController::class, 'destroy'])->name('experiences.destroy');
 
         Route::get('/educations', [CandidateEducationController::class, 'index'])->name('educations.index');
         Route::post('/educations', [CandidateEducationController::class, 'store'])->name('educations.store');
+        Route::put('/educations/{id}', [CandidateEducationController::class, 'update'])->name('educations.update');
         Route::delete('/educations/{id}', [CandidateEducationController::class, 'destroy'])->name('educations.destroy');
+
+        // Onboarding, job preferences, notification preferences, and privacy
+        Route::get('/onboarding', [CandidateSettingsController::class, 'onboarding'])->name('onboarding.show');
+        Route::put('/onboarding', [CandidateSettingsController::class, 'updateOnboarding'])->name('onboarding.update');
+        Route::get('/preferences', [CandidateSettingsController::class, 'preferences'])->name('preferences.show');
+        Route::put('/preferences', [CandidateSettingsController::class, 'updatePreferences'])->name('preferences.update');
+        Route::get('/notification-settings', [CandidateSettingsController::class, 'notificationSettings'])->name('notification-settings.show');
+        Route::put('/notification-settings', [CandidateSettingsController::class, 'updateNotificationSettings'])->name('notification-settings.update');
+        Route::get('/privacy', [CandidateSettingsController::class, 'privacy'])->name('privacy.show');
+        Route::put('/privacy', [CandidateSettingsController::class, 'updatePrivacy'])->name('privacy.update');
 
         // Applications
         Route::get('/applications', [CandidateApplicationController::class, 'index'])->name('applications.index');

@@ -6,12 +6,12 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **147 API route entries** and **120 OpenAPI paths**. Part B account/authentication tests pass; a full SQLite run currently has **236 passing tests and 11 known legacy fixture failures** unrelated to Part B. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **159 API route entries** and **126 OpenAPI paths**. Part C candidate portal tests pass; a full SQLite run currently has **242 passing tests and 11 known legacy fixture failures** unrelated to Parts B/C. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
 
-## 2. Complete Database Catalog (All 55 Tables)
+## 2. Complete Database Catalog (All 60 Tables)
 
 Every table below is created by Laravel migrations. The complete migration-and-seeding flow is verified by the setup feature test with SQLite; run the same commands against MySQL for local development. Application tables include audit columns (`UID`, `LUID`, `created_at`, `updated_at`, `deleted_at`).
 
@@ -75,12 +75,16 @@ Platform administrators are isolated from the user RBAC tables. Their account, r
 | 54 | `countries` | [2026_10_20_100048_create_countries_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_20_100048_create_countries_table.php) | ISO country codes and localized names | Full (`UID`, `LUID`, SoftDeletes) |
 | 55 | `personal_access_tokens` | [2026_10_21_062735_create_personal_access_tokens_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_21_062735_create_personal_access_tokens_table.php) | Laravel Sanctum API authentication tokens | Framework Token Store |
 | 56 | `email_verification_codes` | [2026_10_29_000001_create_email_verification_codes_table.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000001_create_email_verification_codes_table.php) | Hashed, expiring one-time email verification codes | User-owned, consumed timestamp |
+| 57 | `candidate_onboardings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate onboarding steps and calculated completion percentage | Candidate-owned |
+| 58 | `candidate_preferences` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Desired job titles, location, salary and work-model preferences | Candidate-owned |
+| 59 | `candidate_notification_settings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate alert and marketing preferences | Candidate-owned |
+| 60 | `candidate_privacy_settings` | [2026_10_29_000002_create_candidate_portal_settings_tables.php](file:///c:/Projects/hr_managment_system/database/migrations/2026_10_29_000002_create_candidate_portal_settings_tables.php) | Candidate profile visibility and recruiter consent | Candidate-owned |
 
 ---
 
 ## 3. Currently Implemented APIs & Components
 
-The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 147 API route entries and is backed by targeted feature tests.
+The module inventory below documents the main API flows. The source of truth is [`routes/api.php`](file:///c:/Projects/hr_managment_system/routes/api.php), which currently contains 159 API route entries and is backed by targeted feature tests.
 
 ### 3.1. Public Job Discovery Module
 - **Controller:** [`App\Http\Controllers\Api\JobController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/JobController.php)
@@ -283,6 +287,19 @@ class UserAuthController extends Controller
 | `DELETE` | `/api/candidate/profile/photo` | `auth:sanctum` | Deletes the stored candidate photo and clears `photo_path`. |
 
 Verification codes are stored hashed in `email_verification_codes`, expire after 10 minutes, and are never returned in an API response. The queued mail uses `EmailVerificationCodeMail`; production needs SMTP settings and a queue worker.
+
+#### F. Part C candidate onboarding, preferences, privacy, and dashboard
+
+| HTTP Method | Route Endpoint | Authentication | Description |
+|:---|:---|:---|:---|
+| `GET/PUT` | `/api/candidate/onboarding` | `auth:sanctum` | Persist the `basics`, `resume_import`, and `skills_preferences` steps; the backend calculates `completion_percent`. |
+| `GET/PUT` | `/api/candidate/preferences` | `auth:sanctum` | Persist desired titles, location, employment type, minimum salary, work model, relocation, and agency preferences. |
+| `GET/PUT` | `/api/candidate/notification-settings` | `auth:sanctum` | Persist weekly digest, status, interview, message, and marketing alert flags. |
+| `GET/PUT` | `/api/candidate/privacy` | `auth:sanctum` | Persist profile visibility and recruiter/public-search consent. |
+| `PUT` | `/api/candidate/experiences/{id}` | `auth:sanctum` | Update only an experience owned by the authenticated candidate. |
+| `PUT` | `/api/candidate/educations/{id}` | `auth:sanctum` | Update only an education record owned by the authenticated candidate. |
+| `GET` | `/api/candidate/profile/preview` | `auth:sanctum` | Return an employer-safe profile preview without email or phone. |
+| `GET` | `/api/candidate/dashboard` | `auth:sanctum` | Aggregate profile completion, active applications, next interview, and next actions. |
 
 ---
 
@@ -624,7 +641,7 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 ```text
 [x] Final physical tables migrated with audit trail and account status support; platform admins use the dedicated `admins` table and isolated admin RBAC tables.
 [x] Database seeders configured for the basic flow (Super Admin in the dedicated admins table, isolated admin RBAC, categories, skills, demo data)
-[x] 147 API route entries live in routes/api.php (120 OpenAPI paths)
+[x] 159 API route entries live in routes/api.php (126 OpenAPI paths)
 [x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json
 [x] Module 1: User Authentication (Candidate & Company registration, Sanctum auth)

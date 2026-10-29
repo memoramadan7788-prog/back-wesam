@@ -2075,6 +2075,201 @@
                 }
             }
         },
+        "/candidate/dashboard": {
+            "get": {
+                "operationId": "candidate.dashboard",
+                "summary": "GET /api/candidate/dashboard",
+                "tags": [
+                    "CandidateDashboard"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "profile_completion_percent": {
+                                                    "type": "integer"
+                                                },
+                                                "next_interview": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "application_id": {
+                                                            "type": "string"
+                                                        },
+                                                        "job_title": {
+                                                            "type": "string"
+                                                        },
+                                                        "company_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "round_no": {
+                                                            "type": "string"
+                                                        },
+                                                        "interview_type": {
+                                                            "type": "string"
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        },
+                                                        "start_at": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "end_at": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "location": {
+                                                            "type": "string"
+                                                        },
+                                                        "meeting_link": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "application_id",
+                                                        "job_title",
+                                                        "company_name",
+                                                        "round_no",
+                                                        "interview_type",
+                                                        "status",
+                                                        "start_at",
+                                                        "end_at",
+                                                        "location",
+                                                        "meeting_link"
+                                                    ]
+                                                },
+                                                "active_applications": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "job_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "job_title": {
+                                                                "type": "string"
+                                                            },
+                                                            "company_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "applied_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "job_id",
+                                                            "job_title",
+                                                            "company_name",
+                                                            "status",
+                                                            "applied_at"
+                                                        ]
+                                                    }
+                                                },
+                                                "next_actions": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string",
+                                                                        "const": "complete_onboarding"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string",
+                                                                        "const": "Complete your profile onboarding."
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string",
+                                                                        "const": "upload_cv"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string",
+                                                                        "const": "Upload an active CV."
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "key": {
+                                                                        "type": "string",
+                                                                        "const": "browse_jobs"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string",
+                                                                        "const": "Browse jobs and apply to a position."
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "key",
+                                                                    "label"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "profile_completion_percent",
+                                                "next_interview",
+                                                "active_applications",
+                                                "next_actions"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/candidate/educations": {
             "get": {
                 "operationId": "candidate.educations.index",
@@ -2159,6 +2354,63 @@
             }
         },
         "/candidate/educations/{id}": {
+            "put": {
+                "operationId": "candidate.educations.update",
+                "summary": "PUT /api/candidate/educations/{id}",
+                "tags": [
+                    "CandidateEducation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateEducationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Education updated successfully."
+                                        },
+                                        "education": {
+                                            "$ref": "#/components/schemas/CandidateEducationResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "education"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
             "delete": {
                 "operationId": "candidate.educations.destroy",
                 "summary": "DELETE /api/candidate/educations/{id}",
@@ -2600,6 +2852,63 @@
             }
         },
         "/candidate/experiences/{id}": {
+            "put": {
+                "operationId": "candidate.experiences.update",
+                "summary": "PUT /api/candidate/experiences/{id}",
+                "tags": [
+                    "CandidateExperience"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateExperienceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Experience updated successfully."
+                                        },
+                                        "experience": {
+                                            "$ref": "#/components/schemas/CandidateExperienceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "experience"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
             "delete": {
                 "operationId": "candidate.experiences.destroy",
                 "summary": "DELETE /api/candidate/experiences/{id}",
@@ -3505,6 +3814,51 @@
                 }
             }
         },
+        "/candidate/profile/preview": {
+            "get": {
+                "operationId": "candidate.profile.preview",
+                "summary": "GET /api/candidate/profile/preview",
+                "tags": [
+                    "CandidateProfilePreview"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`CandidateProfilePreviewResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/CandidateProfilePreviewResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "skills",
+                                                        "experiences",
+                                                        "educations",
+                                                        "active_cv"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/candidate/recommended-jobs": {
             "get": {
                 "operationId": "candidate.recommended-jobs.index",
@@ -3980,6 +4334,581 @@
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/candidate/onboarding": {
+            "get": {
+                "operationId": "candidate.onboarding.show",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "steps": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "basics": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                },
+                                                                "resume_import": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                },
+                                                                "skills_preferences": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "basics",
+                                                                "resume_import",
+                                                                "skills_preferences"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "completion_percent": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "steps",
+                                                "completion_percent"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidate.onboarding.update",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateOnboardingRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "steps": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "basics": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                },
+                                                                "resume_import": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                },
+                                                                "skills_preferences": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "completed": {
+                                                                            "type": "boolean"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "completed"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "basics",
+                                                                "resume_import",
+                                                                "skills_preferences"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "completion_percent": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "steps",
+                                                "completion_percent"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/candidate/preferences": {
+            "get": {
+                "operationId": "candidate.preferences.show",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "desired_titles": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
+                                                "location": {
+                                                    "type": "string"
+                                                },
+                                                "employment_type": {
+                                                    "type": "string"
+                                                },
+                                                "min_salary": {
+                                                    "type": "string"
+                                                },
+                                                "work_model": {
+                                                    "type": "string"
+                                                },
+                                                "open_to_relocation": {
+                                                    "type": "boolean"
+                                                },
+                                                "include_agency": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "desired_titles",
+                                                "location",
+                                                "employment_type",
+                                                "min_salary",
+                                                "work_model",
+                                                "open_to_relocation",
+                                                "include_agency"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidate.preferences.update",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCandidatePreferencesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "desired_titles": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string"
+                                                            },
+                                                            "minItems": 0,
+                                                            "maxItems": 0
+                                                        }
+                                                    ]
+                                                },
+                                                "location": {
+                                                    "type": "string"
+                                                },
+                                                "employment_type": {
+                                                    "type": "string"
+                                                },
+                                                "min_salary": {
+                                                    "type": "string"
+                                                },
+                                                "work_model": {
+                                                    "type": "string"
+                                                },
+                                                "open_to_relocation": {
+                                                    "type": "boolean"
+                                                },
+                                                "include_agency": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "desired_titles",
+                                                "location",
+                                                "employment_type",
+                                                "min_salary",
+                                                "work_model",
+                                                "open_to_relocation",
+                                                "include_agency"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/candidate/notification-settings": {
+            "get": {
+                "operationId": "candidate.notification-settings.show",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "weekly_digest": {
+                                                    "type": "boolean"
+                                                },
+                                                "status_updates": {
+                                                    "type": "boolean"
+                                                },
+                                                "interview_reminders": {
+                                                    "type": "boolean"
+                                                },
+                                                "messages": {
+                                                    "type": "boolean"
+                                                },
+                                                "marketing": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "weekly_digest",
+                                                "status_updates",
+                                                "interview_reminders",
+                                                "messages",
+                                                "marketing"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidate.notification-settings.update",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCandidateNotificationSettingsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "weekly_digest": {
+                                                    "type": "boolean"
+                                                },
+                                                "status_updates": {
+                                                    "type": "boolean"
+                                                },
+                                                "interview_reminders": {
+                                                    "type": "boolean"
+                                                },
+                                                "messages": {
+                                                    "type": "boolean"
+                                                },
+                                                "marketing": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "weekly_digest",
+                                                "status_updates",
+                                                "interview_reminders",
+                                                "messages",
+                                                "marketing"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/candidate/privacy": {
+            "get": {
+                "operationId": "candidate.privacy.show",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "visibility": {
+                                                    "type": "string"
+                                                },
+                                                "allow_agency_recruiters": {
+                                                    "type": "boolean"
+                                                },
+                                                "show_in_public_search": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "visibility",
+                                                "allow_agency_recruiters",
+                                                "show_in_public_search"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidate.privacy.update",
+                "tags": [
+                    "CandidateSettings"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateCandidatePrivacyRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "visibility": {
+                                                    "type": "string"
+                                                },
+                                                "allow_agency_recruiters": {
+                                                    "type": "boolean"
+                                                },
+                                                "show_in_public_search": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "visibility",
+                                                "allow_agency_recruiters",
+                                                "show_in_public_search"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -13243,6 +14172,93 @@
                 ],
                 "title": "CandidateInterviewResource"
             },
+            "CandidateProfilePreviewResource": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "headline": {
+                        "type": "string"
+                    },
+                    "bio": {
+                        "type": "string"
+                    },
+                    "location": {
+                        "type": "string"
+                    },
+                    "photo_url": {
+                        "type": "null"
+                    },
+                    "years_experience": {
+                        "type": "string"
+                    },
+                    "has_no_experience": {
+                        "type": "boolean"
+                    },
+                    "skills": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string"
+                                },
+                                "name": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                },
+                                "level": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "id",
+                                "name",
+                                "type",
+                                "level"
+                            ]
+                        }
+                    },
+                    "experiences": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CandidateExperienceResource"
+                        }
+                    },
+                    "educations": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CandidateEducationResource"
+                        }
+                    },
+                    "active_cv": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CandidateCvResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "headline",
+                    "bio",
+                    "location",
+                    "photo_url",
+                    "years_experience",
+                    "has_no_experience"
+                ],
+                "title": "CandidateProfilePreviewResource"
+            },
             "CandidateProfileResource": {
                 "type": "object",
                 "properties": {
@@ -15514,6 +16530,135 @@
                 },
                 "title": "UpdateAvailabilityRequest"
             },
+            "UpdateCandidateNotificationSettingsRequest": {
+                "type": "object",
+                "properties": {
+                    "weekly_digest": {
+                        "type": "boolean"
+                    },
+                    "status_updates": {
+                        "type": "boolean"
+                    },
+                    "interview_reminders": {
+                        "type": "boolean"
+                    },
+                    "messages": {
+                        "type": "boolean"
+                    },
+                    "marketing": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateCandidateNotificationSettingsRequest"
+            },
+            "UpdateCandidatePreferencesRequest": {
+                "type": "object",
+                "properties": {
+                    "desired_titles": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    "location": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "employment_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "min_salary": {
+                        "type": [
+                            "number",
+                            "null"
+                        ],
+                        "minimum": 0
+                    },
+                    "work_model": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "onsite",
+                            "remote",
+                            "hybrid",
+                            null
+                        ]
+                    },
+                    "open_to_relocation": {
+                        "type": "boolean"
+                    },
+                    "include_agency": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateCandidatePreferencesRequest"
+            },
+            "UpdateCandidatePrivacyRequest": {
+                "type": "object",
+                "properties": {
+                    "visibility": {
+                        "type": "string",
+                        "enum": [
+                            "public",
+                            "employers_only",
+                            "private"
+                        ]
+                    },
+                    "allow_agency_recruiters": {
+                        "type": "boolean"
+                    },
+                    "show_in_public_search": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdateCandidatePrivacyRequest"
+            },
+            "UpdateEducationRequest": {
+                "type": "object",
+                "properties": {
+                    "institution": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "degree": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "field_of_study": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "graduation_year": {
+                        "type": "integer",
+                        "minimum": 1950,
+                        "maximum": 2050
+                    },
+                    "place": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    }
+                },
+                "title": "UpdateEducationRequest"
+            },
             "UpdateEmployeeRequest": {
                 "type": "object",
                 "properties": {
@@ -15533,6 +16678,41 @@
                     }
                 },
                 "title": "UpdateEmployeeRequest"
+            },
+            "UpdateExperienceRequest": {
+                "type": "object",
+                "properties": {
+                    "company_name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "job_title": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "end_date": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "is_current": {
+                        "type": "boolean"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 2000
+                    }
+                },
+                "title": "UpdateExperienceRequest"
             },
             "UpdateJobInterviewRoundRequest": {
                 "type": "object",
@@ -15690,6 +16870,44 @@
                     }
                 },
                 "title": "UpdateJobRequest"
+            },
+            "UpdateOnboardingRequest": {
+                "type": "object",
+                "properties": {
+                    "steps": {
+                        "type": "object",
+                        "properties": {
+                            "basics": {
+                                "type": "object",
+                                "properties": {
+                                    "completed": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            "resume_import": {
+                                "type": "object",
+                                "properties": {
+                                    "completed": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            "skills_preferences": {
+                                "type": "object",
+                                "properties": {
+                                    "completed": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "steps"
+                ],
+                "title": "UpdateOnboardingRequest"
             },
             "UpdateProfileRequest": {
                 "type": "object",

@@ -50,6 +50,9 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api/admin/me` | `admin`, `user` |
 | `POST /api/auth/logout`, `POST /api/admin/logout` | `message` |
 | `GET|PUT /api/candidate/profile` | `data` |
+| `GET|PUT /api/candidate/onboarding`, `GET|PUT /api/candidate/preferences` | `data` |
+| `GET|PUT /api/candidate/notification-settings`, `GET|PUT /api/candidate/privacy` | `data` |
+| `GET /api/candidate/profile/preview`, `GET /api/candidate/dashboard` | `data` |
 | Candidate CV, experience and education CRUD endpoints | `data` for resources/collections; delete endpoints return `message` |
 | `GET /api/candidate/applications`, `GET /api/candidate/applications/{id}` | `data` |
 | `POST /api/jobs/{jobId}/apply`, `PATCH /api/company/applications/{id}/status` | `application` |
@@ -256,6 +259,40 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
     ```
   - **Success Action (200):** Show toast: *"Profile updated successfully."*
 
+#### Screen 5a: Candidate Onboarding
+- **Read:** `GET /api/candidate/onboarding`
+- **Save:** `PUT /api/candidate/onboarding`
+- **Payload:**
+  ```json
+  {
+    "steps": {
+      "basics": { "completed": true },
+      "resume_import": { "completed": true },
+      "skills_preferences": { "completed": false }
+    }
+  }
+  ```
+- The backend calculates `data.completion_percent` from the three steps; the frontend does not send or calculate the percentage.
+
+#### Screen 5b: Candidate Job Preferences
+- **Read/Save:** `GET|PUT /api/candidate/preferences`
+- **Payload fields:** `desired_titles[]`, `location`, `employment_type`, `min_salary`, `work_model` (`onsite|remote|hybrid`), `open_to_relocation`, and `include_agency`.
+
+#### Screen 5c: Notification and Privacy Settings
+- **Notifications:** `GET|PUT /api/candidate/notification-settings`
+  - Fields: `weekly_digest`, `status_updates`, `interview_reminders`, `messages`, `marketing`.
+- **Privacy:** `GET|PUT /api/candidate/privacy`
+  - Fields: `visibility` (`public|employers_only|private`), `allow_agency_recruiters`, `show_in_public_search`.
+- All four settings endpoints require the candidate Bearer token and return the saved values under `data`.
+
+#### Screen 5d: Employer Preview and Candidate Dashboard
+- **Employer-safe profile preview:** `GET /api/candidate/profile/preview`
+  - Returns public professional fields, skills, experiences, education, and active CV metadata.
+  - It intentionally omits email and phone from the preview response.
+- **Candidate dashboard:** `GET /api/candidate/dashboard`
+  - Returns one `data` object containing `profile_completion_percent`, `next_interview`, `active_applications`, and `next_actions`.
+  - The dashboard endpoint is read-only; use the dedicated settings/profile/application endpoints for changes.
+
 #### Screen 6: CV Management Tab (`/candidate/cvs`)
 - **Event: Page Load**
   - **Method & Route:** `GET /api/candidate/cvs`
@@ -297,6 +334,9 @@ The optional contact fields accepted by this endpoint are `contact_email`, `cont
       "graduation_year": 2021
     }
     ```
+- **Edit Experience:** `PUT /api/candidate/experiences/{id}` with any fields from the create payload.
+- **Edit Education:** `PUT /api/candidate/educations/{id}` with any fields from the create payload.
+- Both update endpoints verify that the record belongs to the authenticated candidate and return `404` for another candidate's record.
 
 ---
 

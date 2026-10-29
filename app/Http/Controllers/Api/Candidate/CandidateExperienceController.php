@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Candidate;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Candidate\StoreExperienceRequest;
+use App\Http\Requests\Candidate\UpdateExperienceRequest;
 use App\Http\Resources\CandidateExperienceResource;
 use App\Models\CandidateExperience;
 use App\Models\CandidateProfile;
@@ -41,6 +42,21 @@ class CandidateExperienceController extends Controller
             'message'    => 'Experience added successfully.',
             'experience' => new CandidateExperienceResource($experience),
         ], 201);
+    }
+
+    /**
+     * PUT /api/candidate/experiences/{id}
+     */
+    public function update(UpdateExperienceRequest $request, int $id): JsonResponse
+    {
+        $profile = CandidateProfile::firstOrCreate(['user_id' => $request->user()->id]);
+        $experience = CandidateExperience::where('candidate_id', $profile->id)->findOrFail($id);
+        $experience->update($request->validated());
+
+        return response()->json([
+            'message' => 'Experience updated successfully.',
+            'experience' => new CandidateExperienceResource($experience->fresh()),
+        ], 200);
     }
 
     /**

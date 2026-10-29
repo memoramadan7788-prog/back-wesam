@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Candidate;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Candidate\StoreEducationRequest;
+use App\Http\Requests\Candidate\UpdateEducationRequest;
 use App\Http\Resources\CandidateEducationResource;
 use App\Models\CandidateEducation;
 use App\Models\CandidateProfile;
@@ -41,6 +42,21 @@ class CandidateEducationController extends Controller
             'message'   => 'Education added successfully.',
             'education' => new CandidateEducationResource($education),
         ], 201);
+    }
+
+    /**
+     * PUT /api/candidate/educations/{id}
+     */
+    public function update(UpdateEducationRequest $request, int $id): JsonResponse
+    {
+        $profile = CandidateProfile::firstOrCreate(['user_id' => $request->user()->id]);
+        $education = CandidateEducation::where('candidate_id', $profile->id)->findOrFail($id);
+        $education->update($request->validated());
+
+        return response()->json([
+            'message' => 'Education updated successfully.',
+            'education' => new CandidateEducationResource($education->fresh()),
+        ], 200);
     }
 
     /**
