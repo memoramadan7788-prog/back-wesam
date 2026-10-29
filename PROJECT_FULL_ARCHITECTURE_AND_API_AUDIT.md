@@ -6,7 +6,7 @@
 
 This comprehensive technical report provides an exhaustive audit of the **HR Management & Recruitment Platform (Laravel 12 Backend)**. It covers:
 1. **The Database Catalog:** Complete specification of the final physical tables across the system, including the isolated platform-admin tables and their audit trail attributes.
-2. **Current Implementation:** The current route inventory contains **169 API route entries** and **136 OpenAPI paths**. Part E application-flow tests pass; the focused Part E suite has **9 passing tests and 54 assertions** on SQLite. The full suite still has known legacy fixture failures unrelated to this Part E change. Admin authentication uses the dedicated `admins` table.
+2. **Current Implementation:** The current route inventory contains **172 API route entries** and **139 OpenAPI paths**. Part G shared-notification tests pass; the focused notification suite has **3 passing tests and 22 assertions** on SQLite. The full suite still has known legacy fixture failures unrelated to this Part G change. Admin authentication uses the dedicated `admins` table.
 3. **Interactive Documentation & Contracts:** OpenAPI documentation generated automatically via `dedoc/scramble` at `/docs/api` and exported to `api.json` for frontend consumption and automated TypeScript type generation.
 
 ---
@@ -129,6 +129,16 @@ The Part D migrations add `jobs.requisition_code`, `jobs.hiring_model`, public c
 | `GET` | `/api/candidate/applications/{id}/activity` | `auth:sanctum` | Return chronological status, interview, and offer activity for the candidate's application. |
 
 Application records now persist `answers`, `expected_salary`, `portfolio_url`, and `keep_in_talent_pool`. The `job_screening_questions` and `candidate_application_drafts` tables support the Figma 16 application form without reusing the unrelated technical-exam question tables.
+
+### 3.1c. Shared Notifications Module
+
+| HTTP Method | Route Endpoint | Authentication | Description |
+|:---|:---|:---|:---|
+| `GET` | `/api/notifications` | `auth:sanctum` | List notifications for the authenticated candidate, company user, interviewer, employee, or platform admin. |
+| `PATCH` | `/api/notifications/{id}/read` | `auth:sanctum` | Mark one owned notification as read. |
+| `PATCH` | `/api/notifications/read-all` | `auth:sanctum` | Mark all owned unread notifications as read. |
+
+Regular users are resolved through `notifications.recipient_id`; isolated platform admins are resolved through the new nullable `notifications.admin_recipient_id`. Candidate-prefixed notification routes remain compatibility aliases.
 
 ### 3.2. Admin Authentication Module
 - **Controllers:** [`App\Http\Controllers\Api\Admin\AdminAuthController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAuthController.php), [`App\Http\Controllers\Api\Admin\AdminAnalyticsController`](file:///c:/Projects/hr_managment_system/app/Http/Controllers/Api/Admin/AdminAnalyticsController.php)

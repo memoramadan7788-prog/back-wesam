@@ -36,6 +36,8 @@ The table below documents the primary success key for every API endpoint family.
 | `GET /api/hello` | `message` |
 | `GET /api/jobs`, `GET /api/jobs/{job}` | `data` |
 | `GET /api/jobs/{jobId}/screening-questions` | `data` |
+| `GET /api/notifications` | `data`, `meta` |
+| `PATCH /api/notifications/{id}/read`, `PATCH /api/notifications/read-all` | `data`, `message` |
 | `GET /api/companies`, `GET /api/companies/{id}`, `GET /api/companies/{id}/jobs` | `data` |
 | `GET /api/public/featured` | `featured_companies`, `featured_jobs`, `counts` |
 | `GET /api/job-categories`, `GET /api/skills`, `GET /api/countries` | `data` |
@@ -87,6 +89,16 @@ The table below documents the primary success key for every API endpoint family.
 | Interview scheduling and evaluation endpoints under `/api/interviews` | `data` |
 
 For authentication, `access_token` is the canonical key. `token` remains as a backwards-compatible alias and has the same value.
+
+### Shared Notifications
+
+Notifications are now available to every authenticated principal through the shared `/api/notifications` routes: candidates, company admins/HR/employees, interviewers, and platform admins.
+
+- `GET /api/notifications?unread_only=true&per_page=15` returns the authenticated principal's notifications under `data`, with pagination and `unread_count` under `meta`.
+- `PATCH /api/notifications/{id}/read` marks only an owned notification as read and returns the updated notification under `data`.
+- `PATCH /api/notifications/read-all` marks all owned unread notifications as read and returns `data.updated_count`.
+- A notification is never readable or writable by another user/admin; unauthorized ownership access returns `404`.
+- The old `/api/candidate/notifications*` routes remain as compatibility aliases for existing candidate clients. New frontend code should use the shared routes.
 
 ---
 

@@ -34,6 +34,7 @@ use App\Http\Controllers\Api\InterviewerInterviewController;
 use App\Http\Controllers\Api\InterviewSchedulingController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\JobScreeningQuestionController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Offer\OfferController;
 use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
@@ -200,6 +201,11 @@ Route::prefix('admin')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Shared notifications for candidates, company users, interviewers, employees, and platform admins.
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->whereNumber('id')->name('notifications.read');
 
     // 1. Candidate Portal
     Route::prefix('candidate')->name('api.candidate.')->group(function () {

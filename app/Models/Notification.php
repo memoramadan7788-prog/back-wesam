@@ -23,4 +23,9 @@ class Notification extends Model
     {
         return $this->belongsTo(User::class, 'recipient_id');
     }
+
+    public function adminRecipient(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'admin_recipient_id');
+    }
 }
