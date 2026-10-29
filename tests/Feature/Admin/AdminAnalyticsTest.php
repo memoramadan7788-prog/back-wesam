@@ -193,4 +193,24 @@ class AdminAnalyticsTest extends TestCase
             ->assertForbidden()
             ->assertJson(['message' => 'Forbidden. Super Admin access only.']);
     }
+
+    public function test_super_admin_can_view_platform_dashboard(): void
+    {
+        $this->actingAs($this->admin)
+            ->getJson('/api/admin/dashboard')
+            ->assertOk()
+            ->assertJsonStructure([
+                'data' => [
+                    'users' => ['total', 'new_30d', 'prev_30d', 'inactive', 'by_type'],
+                    'companies' => ['total', 'new_30d', 'by_status'],
+                    'jobs' => ['total', 'published'],
+                    'applications' => ['total', 'last_30d', 'prev_30d'],
+                    'interviews' => ['scheduled'],
+                    'trend',
+                    'pending_companies',
+                    'recent_activity',
+                    'generated_at',
+                ],
+            ]);
+    }
 }

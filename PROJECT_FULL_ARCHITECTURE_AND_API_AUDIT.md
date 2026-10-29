@@ -598,7 +598,7 @@ public function reject(RespondOfferRequest $request, int $id): JsonResponse;
 
 ```text
 [x] Final physical tables migrated with audit trail and account status support; platform admins use the dedicated `admins` table and isolated admin RBAC tables.
-[x] Database seeders configured for the basic flow (Super Admin in users, RBAC, categories, skills, demo data)
+[x] Database seeders configured for the basic flow (Super Admin in the dedicated admins table, isolated admin RBAC, categories, skills, demo data)
 [x] 120 API route entries live in routes/api.php (100 OpenAPI paths)
 [x] 217 automated feature/unit tests passing (1143 assertions)
 [x] Interactive API Documentation live at /docs/api via dedoc/scramble & exported api.json

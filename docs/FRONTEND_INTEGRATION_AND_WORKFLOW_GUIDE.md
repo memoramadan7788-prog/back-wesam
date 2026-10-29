@@ -188,6 +188,15 @@ flowchart TD
 - **Method & Route:** `POST /api/auth/logout` (Header: `Authorization: Bearer <token>`)
 - **Success Action (200):** Wipe auth token from storage, reset state, redirect to `/login`.
 
+#### Screen 4a: Account Security & Deletion
+- **Change Password (canonical):** `PUT /api/auth/change-password`
+  - Payload: `current_password`, `new_password`, `new_password_confirmation`.
+  - The existing `/api/candidate/change-password` and `/api/company/change-password` paths remain compatibility aliases for the same action.
+- **Delete Account (canonical):** `DELETE /api/auth/account`
+  - The existing `/api/candidate/account` and `/api/company/delete-account` paths remain compatibility aliases.
+  - The authenticated user account is soft-deleted and its Sanctum tokens are revoked. Platform admin accounts must use the separate admin lifecycle.
+- **Reset Password:** `POST /api/auth/reset-password` remains canonical. `POST /api/company/reset-password` is supported as a compatibility alias.
+
 ---
 
 ### 3.2. Public Lookups & Taxonomy (For Dropdowns)
@@ -303,6 +312,12 @@ flowchart TD
 ---
 
 ### 3.5. Online Assessment & Exam Flow
+
+#### Screen 10A: Candidate Exams List (`/candidate/exams`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/candidate/exams`
+  - **Access:** Bearer token for a candidate.
+  - **Behavior:** Returns published exams attached to jobs the candidate applied to. Exams from unrelated jobs and draft exams are excluded.
 
 #### Screen 11: Candidate Exam Room (`/candidate/exams/:examId/application/:applicationId`)
 - **Trigger / Button:** Click **"Start Exam"**
@@ -478,6 +493,10 @@ flowchart TD
   - **Success Action (201):** Offer sent to candidate portal, application moves to `offered`.
 
 #### Screen 19: Create Assessment Exam (`/company/exams/create`)
+- **Event: Page Load / Exam Details**
+  - **List:** `GET /api/company/exams`
+  - **Details:** `GET /api/company/exams/{examId}`
+  - **Behavior:** Both endpoints are scoped to the authenticated company. Details include the exam questions and options.
 - **Trigger / Button:** Click **"Save Exam Setup"**
   - **Method & Route:** `POST /api/company/exams`
   - **Payload:**
@@ -556,6 +575,13 @@ flowchart TD
     }
     ```
   - **Success Action (200):** Store `access_token` and `admin` info. Platform admin identity comes from the dedicated `admins` table; no OTP/MFA field is required.
+
+#### Screen 22: Super Admin KPI Dashboard (`/admin/dashboard`)
+- **Event: Page Load**
+  - **Method & Route:** `GET /api/admin/dashboard`
+  - **Access Required:** authenticated `admins`-table account with the `super_admin` role in platform scope and the `reports.view` permission.
+  - **Important:** users with `account_type=admin` in the regular `users` table are not allowed to open this dashboard and receive `403 Forbidden`.
+  - **Data Returned:** platform KPI totals for users, companies, jobs, applications, interviews, pending companies, recent activity, and trends.
 
 #### Screen 22A: Platform Analytics Dashboard (`/admin/analytics`)
 - **Event: Page Load**
@@ -738,6 +764,7 @@ flowchart TD
 
 #### Company interview assignment
 - **Create:** `POST /api/company/applications/{applicationId}/interviews`
+- **Application interviews:** `GET /api/company/applications/{applicationId}/interviews` returns only the interviews for that application after validating that the application belongs to the authenticated company.
 - **Payload:**
   ```json
   {
