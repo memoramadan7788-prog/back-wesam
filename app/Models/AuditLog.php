@@ -59,6 +59,13 @@ class AuditLog extends Model
     ): self {
         $authenticated = auth()->user();
         $resolvedUserId = $userId;
+
+        // Admin actions are tracked via admin_id. user_id has a FK to users,
+        // so it must be NULL (never 0) when the actor is an Admin.
+        if ($adminId !== null || $resolvedUserId === 0) {
+            $resolvedUserId = null;
+        }
+
         if ($resolvedUserId === null && $adminId === null && $authenticated instanceof User) {
             $resolvedUserId = $authenticated->id;
         }
@@ -76,4 +83,3 @@ class AuditLog extends Model
         ]);
     }
 }
-

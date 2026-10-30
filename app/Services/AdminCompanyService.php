@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class AdminCompanyService
 {
-    /**
-     * List companies with optional status filtering.
-     */
+   
     public function list(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
         return Company::query()
@@ -29,10 +27,7 @@ class AdminCompanyService
             ->paginate($perPage);
     }
 
-    /**
-     * Approve a company registration.
-     * Allowed transitions: pending -> approved, suspended -> approved.
-     */
+    
     public function approve(Company $company, int $reviewerId, ?int $reviewerAdminId = null): Company
     {
         if (! in_array($company->status, ['pending', 'suspended'], true)) {
@@ -74,10 +69,8 @@ class AdminCompanyService
         });
     }
 
-    /**
-     * Reject a company registration.
-     * Allowed transitions: pending -> rejected.
-     */
+    
+   
     public function reject(Company $company, int $reviewerId, string $reason, ?int $reviewerAdminId = null): Company
     {
         if ($company->status !== 'pending') {
@@ -121,10 +114,7 @@ class AdminCompanyService
         });
     }
 
-    /**
-     * Suspend a company account.
-     * Allowed transitions: approved -> suspended.
-     */
+    
     public function suspend(Company $company, int $reviewerId, ?string $reason = null, ?int $reviewerAdminId = null): Company
     {
         if ($company->status !== 'approved') {

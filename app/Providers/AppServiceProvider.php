@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Ats\LlmClient;
+use App\Services\Ats\OllamaClient;
+use App\Services\Ats\SkillMatcher;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -13,10 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // The checked-in/exported OpenAPI document is used by the docs routes below.
-        // This keeps the browser documentation available when the development database
-        // is offline (Scramble's live generator introspects Eloquent tables).
+
         Scramble::ignoreDefaultRoutes();
+        $this->app->bind(LlmClient::class, OllamaClient::class);
+        $this->app->singleton(SkillMatcher::class);
     }
 
     /**

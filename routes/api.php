@@ -1,53 +1,54 @@
 <?php
 
-use App\Http\Controllers\Api\Admin\AuditLogController;
+use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Api\Admin\AdminAuthController;
+use App\Http\Controllers\Api\Admin\AuditLogController;
+use App\Http\Controllers\Api\Admin\CompanyDetailsController;
 use App\Http\Controllers\Api\Admin\CompanyManagementController;
+use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Application\CandidateApplicationController;
 use App\Http\Controllers\Api\Application\CandidateApplicationDraftController;
 use App\Http\Controllers\Api\Application\CompanyApplicationController;
 use App\Http\Controllers\Api\Auth\UserAuthController;
 use App\Http\Controllers\Api\Candidate\CandidateCvController;
+use App\Http\Controllers\Api\Candidate\CandidateDashboardController;
 use App\Http\Controllers\Api\Candidate\CandidateEducationController;
 use App\Http\Controllers\Api\Candidate\CandidateExperienceController;
+use App\Http\Controllers\Api\Candidate\CandidateHiddenJobController;
 use App\Http\Controllers\Api\Candidate\CandidateProfileController;
 use App\Http\Controllers\Api\Candidate\CandidateProfilePreviewController;
-use App\Http\Controllers\Api\Candidate\CandidateDashboardController;
-use App\Http\Controllers\Api\Candidate\CandidateSettingsController;
 use App\Http\Controllers\Api\Candidate\CandidateRecommendedJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSavedJobController;
 use App\Http\Controllers\Api\Candidate\CandidateSavedSearchController;
-use App\Http\Controllers\Api\Candidate\CandidateHiddenJobController;
+use App\Http\Controllers\Api\Candidate\CandidateSettingsController;
 use App\Http\Controllers\Api\Candidate\CandidateSkillController;
 use App\Http\Controllers\Api\CandidateAvailableSlotsController;
 use App\Http\Controllers\Api\CandidateInterviewController;
 use App\Http\Controllers\Api\Company\CompanyEmployeeController;
-use App\Http\Controllers\Api\Company\CompanyJobController;
-use App\Http\Controllers\Api\Company\JobInterviewRoundController;
+use App\Http\Controllers\Api\Company\CompanyHrController;
 use App\Http\Controllers\Api\Company\CompanyInterviewController;
+use App\Http\Controllers\Api\Company\CompanyJobController;
+use App\Http\Controllers\Api\Company\CompanyProfileController;
+use App\Http\Controllers\Api\Company\JobInterviewRoundController;
+use App\Http\Controllers\Api\ContactMessageController;
 use App\Http\Controllers\Api\Exam\CandidateExamController;
 use App\Http\Controllers\Api\Exam\CompanyExamController;
-use App\Http\Controllers\Api\InterviewEvaluationController;
 use App\Http\Controllers\Api\InterviewerAvailabilityController;
 use App\Http\Controllers\Api\InterviewerInterviewController;
+use App\Http\Controllers\Api\InterviewEvaluationController;
 use App\Http\Controllers\Api\InterviewSchedulingController;
 use App\Http\Controllers\Api\JobController;
 use App\Http\Controllers\Api\JobScreeningQuestionController;
+use App\Http\Controllers\Api\LookupController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Offer\OfferController;
+use App\Http\Controllers\Api\PublicCompanyController;
+use App\Http\Controllers\Api\PublicFeaturedController;
 use App\Http\Controllers\Api\Salary\SalaryBenchmarkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Api\Admin\AdminAnalyticsController;
-use App\Http\Controllers\Api\Admin\CompanyDetailsController;
-use App\Http\Controllers\Api\Company\CompanyProfileController;
-use App\Http\Controllers\Api\Company\CompanyHrController;
-use App\Http\Controllers\Api\ContactMessageController;
-use App\Http\Controllers\Api\PublicCompanyController;
-use App\Http\Controllers\Api\PublicFeaturedController;
-
+use App\Http\Controllers\Api\Company\CompanyAtsController;
 /*
 |--------------------------------------------------------------------------
 | General / Basic Routes
@@ -66,7 +67,7 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/hello', function () {
     return response()->json([
-        'message' => 'Hello World'
+        'message' => 'Hello World',
     ]);
 });
 
@@ -94,9 +95,9 @@ Route::middleware('throttle:60,1')->group(function () {
 | System Lookups & Taxonomy (Public)
 |--------------------------------------------------------------------------
 */
-Route::get('/job-categories', [\App\Http\Controllers\Api\LookupController::class, 'categories'])->name('lookups.categories');
-Route::get('/skills', [\App\Http\Controllers\Api\LookupController::class, 'skills'])->name('lookups.skills');
-Route::get('/countries', [\App\Http\Controllers\Api\LookupController::class, 'countries'])->name('lookups.countries');
+Route::get('/job-categories', [LookupController::class, 'categories'])->name('lookups.categories');
+Route::get('/skills', [LookupController::class, 'skills'])->name('lookups.skills');
+Route::get('/countries', [LookupController::class, 'countries'])->name('lookups.countries');
 
 /*
 |--------------------------------------------------------------------------
@@ -350,6 +351,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // Candidate/company exam discovery and details.
         Route::get('/exams', [CompanyExamController::class, 'index'])->name('exams.index');
         Route::get('/exams/{id}', [CompanyExamController::class, 'show'])->name('exams.show');
+        Route::middleware('permission:applications.review')
+            ->post('/applications/{id}/ats-evaluation', [CompanyAtsController::class, 'store'])
+            ->middleware('throttle:20,1')->whereNumber('id')->name('applications.ats.store');
+
+        Route::middleware('permission:applications.view')
+            ->get('/applications/{id}/ats-evaluation', [CompanyAtsController::class, 'show'])
+            ->whereNumber('id')->name('applications.ats.show');
+
+        Route::middleware('permission:applications.override_ai')
+            ->post('/applications/{id}/ats-evaluation/decision', [CompanyAtsController::class, 'decide'])
+            ->whereNumber('id')->name('applications.ats.decide');
 
         // Employees & Interviewer Onboarding (Package 2)
         Route::post('/join-requests', [CompanyEmployeeController::class, 'storeJoinRequest'])->name('employees.join');
